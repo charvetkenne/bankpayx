@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+     <groupId>com.mansa</groupId>
+     <artifactId>bankpayx</artifactId>
+     <version>1.0-SNAPSHOT</version>
+     <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <groupId>com.mansa</groupId>
+  <artifactId>payment-shared-kernel</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>payment-shared-kernel</name>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <dependencies>
+     <dependency>
+       <groupId>org.junit.jupiter</groupId>
+       <artifactId>junit-jupiter</artifactId>
+       <version>5.10.2</version>
+       <scope>test</scope>
+     </dependency>
+
+
+        <!-- DTOs + Serialization support -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+
+        <!-- Lombok (DTOs, exceptions, value objects) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

@@ -1,0 +1,36 @@
+-------------------------------------------------------------------------------
+Test set: com.mansa.integration.OutboxIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2154 s <<< FAILURE! -- in com.mansa.integration.OutboxIntegrationTest
+com.mansa.integration.OutboxIntegrationTest -- Time elapsed: 2154 s <<< ERROR!
+org.testcontainers.containers.ContainerFetchException: Can't get Docker image: RemoteDockerImage(imageName=testcontainers/ryuk:0.12.0, imagePullPolicy=DefaultPullPolicy(), imageNameSubstitutor=org.testcontainers.utility.ImageNameSubstitutor$LogWrappedImageNameSubstitutor@5cf8edcf)
+	at org.testcontainers.containers.GenericContainer.getDockerImageName(GenericContainer.java:1364)
+	at org.testcontainers.containers.GenericContainer.doStart(GenericContainer.java:351)
+	at org.testcontainers.containers.GenericContainer.start(GenericContainer.java:322)
+	at org.testcontainers.utility.RyukResourceReaper.maybeStart(RyukResourceReaper.java:78)
+	at org.testcontainers.utility.RyukResourceReaper.init(RyukResourceReaper.java:42)
+	at org.testcontainers.DockerClientFactory.client(DockerClientFactory.java:245)
+	at org.testcontainers.DockerClientFactory$1.getDockerClient(DockerClientFactory.java:108)
+	at com.github.dockerjava.api.DockerClientDelegate.authConfig(DockerClientDelegate.java:109)
+	at org.testcontainers.containers.GenericContainer.start(GenericContainer.java:321)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter.start(TestcontainersExtension.java:276)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter.access$200(TestcontainersExtension.java:263)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension.lambda$null$4(TestcontainersExtension.java:83)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension.lambda$startContainers$5(TestcontainersExtension.java:83)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension.startContainers(TestcontainersExtension.java:83)
+	at org.testcontainers.junit.jupiter.TestcontainersExtension.beforeAll(TestcontainersExtension.java:57)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+Caused by: org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException: Condition with org.testcontainers.images.RemoteDockerImage was not fulfilled within 2 minutes.
+	at org.testcontainers.shaded.org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
+	at org.testcontainers.shaded.org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
+	at org.testcontainers.shaded.org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
+	at org.testcontainers.shaded.org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
+	at org.testcontainers.shaded.org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
+	at org.testcontainers.images.RemoteDockerImage.resolve(RemoteDockerImage.java:109)
+	at org.testcontainers.images.RemoteDockerImage.resolve(RemoteDockerImage.java:35)
+	at org.testcontainers.utility.LazyFuture.getResolvedValue(LazyFuture.java:20)
+	at org.testcontainers.utility.LazyFuture.get(LazyFuture.java:41)
+	at org.testcontainers.containers.GenericContainer.getDockerImageName(GenericContainer.java:1362)
+	... 16 more
+

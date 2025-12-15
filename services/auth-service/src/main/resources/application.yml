@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankpayx_auth_db
+    username: postgres
+    password: 1406JEFFwork_
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+server:
+  port: 8081   # <-- UN AUTRE PORT ! (auth-service ≠ eureka)
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+jwt:
+  secret: "replace-with-a-very-long-random-secret-at-least-32-bytes-long-change-me"
+  access-token-validity-seconds: 900

@@ -1,0 +1,15 @@
+pipeline{// conteneur principa 
+  agent any //pour executer le piline sur  n'importe quel agent disponible  
+
+  tools{//optionel 
+  }
+
+  stages{//groupe d' etape logique
+    stage('checkout'){//recuperer le code source 
+      steps{
+        
+      }
+    }
+  }
+
+}

@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: Card Service - BankPayX
+  version: "0.1.0"
+  description: API pour autorisation carte (BankPayX - Card Service). Flux simplifié pour demo/POC.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/cards/authorize:
+    post:
+      summary: Demande d'autorisation de paiement par carte
+      operationId: authorizeCard
+      tags:
+        - card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        "200":
+          description: Autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+        "402":
+          description: Paiement refusé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+        "400":
+          description: Requête invalide
+components:
+  schemas:
+    AuthorizationRequest:
+      type: object
+      properties:
+        pan:
+          type: string
+          example: "4111111111111111"
+          description: "PAN de la carte (ne pas stocker en clair en production)"
+        expiry:
+          type: string
+          example: "2512"
+          description: "MMYY ou YYMM suivant implémentation"
+        amount:
+          type: number
+          format: double
+          example: 12.34
+        currency:
+          type: string
+          example: "EUR"
+        merchantId:
+          type: string
+          example: "M123"
+        rrn:
+          type: string
+          example: "RRN-0001"
+      required:
+        - pan
+        - expiry
+        - amount
+        - currency
+    AuthorizationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [AUTHORIZED, DECLINED, ERROR]
+        authCode:
+          type: string
+        message:
+          type: string
+      example:
+        status: "AUTHORIZED"
+        authCode: "123456"
+        message: null

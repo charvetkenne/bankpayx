@@ -1,0 +1,6 @@
+com\mansa\AppTest.class
+com\mansa\domain\CardAuthorizationTest.class
+com\mansa\OutboxIntegrationTest.class
+com\mansa\Outbox\OutboxPublisherTest.class
+com\mansa\AuthorizeControllerIT.class
+com\mansa\integration\OutboxIntegrationTest.class

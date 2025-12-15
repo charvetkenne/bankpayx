@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/> <!-- always resolve from Maven Central -->
+  </parent>
+
+  <groupId>com.mansa</groupId>
+  <artifactId>bankpayx</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>bankpayx</name>
+  <packaging>pom</packaging>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <modules>
+        <module>common/payment-shared-kernel</module>
+        <module>common/iso8583-adapter</module>
+        <module>common/iso20022-adapter</module>
+        <module>services/card</module>
+        <module>services/sepa</module>
+        <module>services/mobilemoney</module>
+        <module>services/transaction</module>
+        <module>services/notification</module>
+        <module>services/reporting</module>
+        <module>services/auth-service</module>
+        <module>infrastructure/api-gateway</module>
+        <module>infrastructure/config-server</module>
+        <module>infrastructure/service-discovery</module>
+        <module>infrastructure/monitoring</module>
+    </modules>
+
+    <!-- Centralized Version Management -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Import Spring Boot managed dependencies -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Lombok (shared version) -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.34</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Test containers (optional but recommended) -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>1.20.1</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+  <!-- Common properties -->
+    <properties>
+        <java.version>17</java.version>
+        <spring.boot.version>3.5.6</spring.boot.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+    <!-- Build configuration -->
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <!-- Compiler Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <release>${maven.compiler.release}</release>
+                    </configuration>
+                </plugin>
+
+                <!-- Spring Boot Plugin -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+
+                <!-- Surefire (Test Execution) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+
+                <!-- Failsafe (Integration Tests) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+
+                <!-- Docker plugin (optional for all modules) -->
+                <plugin>
+                    <groupId>com.google.cloud.tools</groupId>
+                    <artifactId>jib-maven-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+  </build>
+
+</project>
