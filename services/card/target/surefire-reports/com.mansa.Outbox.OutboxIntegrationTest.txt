@@ -1,17 +1,17 @@
 -------------------------------------------------------------------------------
 Test set: com.mansa.Outbox.OutboxIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.893 s <<< FAILURE! -- in com.mansa.Outbox.OutboxIntegrationTest
-com.mansa.Outbox.OutboxIntegrationTest -- Time elapsed: 0.893 s <<< ERROR!
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 1.113 s <<< FAILURE! -- in com.mansa.Outbox.OutboxIntegrationTest
+com.mansa.Outbox.OutboxIntegrationTest -- Time elapsed: 1.113 s <<< ERROR!
 java.lang.IllegalStateException: Could not find a valid Docker environment. Please see logs and check configuration
-	at org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$getFirstValidStrategy$7(DockerClientProviderStrategy.java:274)
+	at org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$getFirstValidStrategy$7(DockerClientProviderStrategy.java:277)
 	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
-	at org.testcontainers.dockerclient.DockerClientProviderStrategy.getFirstValidStrategy(DockerClientProviderStrategy.java:265)
-	at org.testcontainers.DockerClientFactory.getOrInitializeStrategy(DockerClientFactory.java:154)
-	at org.testcontainers.DockerClientFactory.client(DockerClientFactory.java:196)
-	at org.testcontainers.DockerClientFactory$1.getDockerClient(DockerClientFactory.java:108)
+	at org.testcontainers.dockerclient.DockerClientProviderStrategy.getFirstValidStrategy(DockerClientProviderStrategy.java:268)
+	at org.testcontainers.DockerClientFactory.getOrInitializeStrategy(DockerClientFactory.java:152)
+	at org.testcontainers.DockerClientFactory.client(DockerClientFactory.java:194)
+	at org.testcontainers.DockerClientFactory$1.getDockerClient(DockerClientFactory.java:106)
 	at com.github.dockerjava.api.DockerClientDelegate.authConfig(DockerClientDelegate.java:109)
-	at org.testcontainers.containers.GenericContainer.start(GenericContainer.java:321)
+	at org.testcontainers.containers.GenericContainer.start(GenericContainer.java:329)
 	at org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter.start(TestcontainersExtension.java:276)
 	at org.testcontainers.junit.jupiter.TestcontainersExtension$StoreAdapter.access$200(TestcontainersExtension.java:263)
 	at org.testcontainers.junit.jupiter.TestcontainersExtension.lambda$null$4(TestcontainersExtension.java:83)

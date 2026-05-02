@@ -2,14 +2,22 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bankpayx_auth_db
     username: postgres
-    password: 1406JEFFwork_
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
-
+    show-sql: false 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/bankpayx  
+  
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: auth-group
+      auto-offset-reset: earliest
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -22,8 +30,15 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
-    fetch-registry: true
+    fetch-registry: true 
 
-jwt:
-  secret: "replace-with-a-very-long-random-secret-at-least-32-bytes-long-change-me"
-  access-token-validity-seconds: 900
+keycloak:
+  admin:
+    url: http://localhost:8080
+    token: YOUR_ADMIN_TOKEN
+  realm: bankpayx    
+#jwt provider pour creer les cles en local 
+
+# jwt:
+#   secret: ${SECRET_KEY}
+#   access-token-validity-seconds: 900

@@ -18,6 +18,7 @@ public class RefreshToken {
     private UUID id;
 
     @Column(nullable = false, unique = true)
+    @SuppressWarnings("unused")
     private String token;
 
     @Column(nullable = false)
