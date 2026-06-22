@@ -226,10 +226,10 @@ Client Webhook
 ## Payments
 
 ```
-POST   /api/payments
-GET    /api/payments/{id}
-GET    /api/payments
-DELETE /api/payments/{id}
+POST   /api/v1/payments
+GET    /api/v1/payments/{id}
+GET    /api/v1/payments
+DELETE /api/v1/payments/{id}
 ```
 
 ---
@@ -237,8 +237,8 @@ DELETE /api/payments/{id}
 ## Transactions
 
 ```
-GET /api/transactions
-GET /api/transactions/{id}
+GET /api/v1/transactions
+GET /api/v1/transactions/{id}
 ```
 
 ---
@@ -246,8 +246,8 @@ GET /api/transactions/{id}
 ## Accounts
 
 ```
-POST /api/accounts
-GET /api/accounts/{id}
+POST /api/v1/accounts
+GET /api/v1/accounts/{id}
 ```
 
 ---
@@ -364,4 +364,4 @@ Jeff Charvet
 Backend Java Engineer
 
 GitHub:
-https://github.com/yourusername
+https://github.com/charvetkenne
