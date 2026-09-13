@@ -1,6 +1,6 @@
 # 💳 Modular Payment Platform
 
-> A production-oriented, modular payment platform built with Java & Spring Boot, inspired by modern fintech architectures such as Stripe, PayPal, and Adyen.
+> A production-oriented, modular payment platform built with Java & Spring Boot, inspired by modern fintech architectures such as Stripe, PayPal, and Mobile Money.
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green)
