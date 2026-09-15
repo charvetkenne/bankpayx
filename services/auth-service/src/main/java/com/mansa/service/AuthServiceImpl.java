@@ -1,6 +1,8 @@
 package com.mansa.service;
 
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mansa.config.JwtProvider;
 import com.mansa.domain.RefreshToken;
 import com.mansa.domain.Role;
@@ -8,8 +10,10 @@ import com.mansa.domain.User;
 import com.mansa.dto.AuthResponse;
 import com.mansa.dto.LoginRequest;
 import com.mansa.dto.RegisterRequest;
-import com.mansa.events.UserRegisteredEvent;
+import com.mansa.domain.event.TokenIssuedEvent;
+import com.mansa.domain.event.UserRegisteredEvent;
 import com.mansa.repository.*;
+import com.mansa.infrastructure.kafka.AuthEventProducer;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -27,24 +32,29 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final AuthEventProducer eventProducer;
 
     public AuthServiceImpl(UserRepository userRepository,
                            RefreshTokenRepository refreshTokenRepository,
                            BCryptPasswordEncoder passwordEncoder,
                            JwtProvider jwtProvider,
-                           KafkaTemplate<String, Object> kafkaTemplate) {
+                           KafkaTemplate<String, Object> kafkaTemplate,
+                           AuthEventProducer eventProducer) { // <-- AJOUT
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
         this.kafkaTemplate = kafkaTemplate;
+        this.eventProducer = eventProducer;
     }
 
+    // ================= REGISTER =================
     @Override
-    @Transactional
     public AuthResponse register(RegisterRequest req) {
+
         if (userRepository.existsByUsername(req.getUsername()))
             throw new IllegalArgumentException("username.exists");
+
         if (userRepository.existsByEmail(req.getEmail()))
             throw new IllegalArgumentException("email.exists");
 
@@ -56,9 +66,30 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         user = userRepository.save(user);
-        String accessToken = jwtProvider.generateAccessToken(user.getUsername(), user.getRole().name());
+
+        String accessToken = jwtProvider.generateAccessToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
+
         String refreshToken = createAndStoreRefreshToken(user.getId());
-        kafkaTemplate.send("user.registered", new UserRegisteredEvent(user.getId(), user.getUsername(), user.getEmail()));
+
+        // ✔ EVENT USER REGISTERED (tu avais déjà)
+        kafkaTemplate.send(
+                "user.registered",
+                new UserRegisteredEvent(user.getId(), user.getUsername(), user.getEmail())
+        );
+
+        // ✔ EVENT TOKEN ISSUED (AJOUT)
+        eventProducer.send(
+                "token.issued",
+                new TokenIssuedEvent(
+                        user.getUsername(),
+                        accessToken,
+                        Instant.now()
+                )
+        );
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -66,15 +97,43 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    // ================= LOGIN =================
     @Override
     public AuthResponse login(LoginRequest req) {
+
         User user = userRepository.findByUsername(req.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("invalid.credentials"));
+
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("invalid.credentials");
         }
-        String accessToken = jwtProvider.generateAccessToken(user.getUsername(), user.getRole().name());
+
+        String accessToken = jwtProvider.generateAccessToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
+
         String refreshToken = createAndStoreRefreshToken(user.getId());
+
+        // ✔ EVENT LOGIN SUCCESS (AJOUT)
+        eventProducer.send(
+                "login.success",
+                new LoginSuccessEvent(
+                        user.getUsername(),
+                        Instant.now()
+                )
+        );
+
+        // ✔ EVENT TOKEN ISSUED (AJOUT)
+        eventProducer.send(
+                "token.issued",
+                new TokenIssuedEvent(
+                        user.getUsername(),
+                        accessToken,
+                        Instant.now()
+                )
+        );
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -82,28 +141,37 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    private String createAndStoreRefreshToken(UUID userId) {
-        String token = UUID.randomUUID().toString();
-        var rt = RefreshToken.builder()
-                .token(token)
-                .userId(userId)
-                .expiresAt(Instant.now().plusSeconds(60L * 60L * 24L * 30L)) // 30 days
-                .build();
-        refreshTokenRepository.save(rt);
-        return token;
-    }
-
+    // ================= REFRESH =================
     @Override
     public AuthResponse refreshToken(String refreshToken) {
+
         var rt = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new IllegalArgumentException("invalid.refresh.token"));
-        if (rt.getExpiresAt().isBefore(Instant.now())) throw new IllegalArgumentException("refresh.expired");
-        
-        Objects.requireNonNull( rt,"need not null value");
-        var user = userRepository.findById(rt.getUserId()).orElseThrow();
-        String accessToken = jwtProvider.generateAccessToken(user.getUsername(), user.getRole().name());
+
+        if (rt.getExpiresAt().isBefore(Instant.now()))
+            throw new IllegalArgumentException("refresh.expired");
+
+        var user = userRepository.findById(rt.getUserId())
+                .orElseThrow();
+
+        String accessToken = jwtProvider.generateAccessToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
+
         refreshTokenRepository.delete(rt);
         String newRefresh = createAndStoreRefreshToken(user.getId());
+
+        // ✔ EVENT TOKEN ISSUED (BONNE PRATIQUE)
+        eventProducer.send(
+                "token.issued",
+                new TokenIssuedEvent(
+                        user.getUsername(),
+                        accessToken,
+                        Instant.now()
+                )
+        );
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(newRefresh)
@@ -111,9 +179,29 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    // ================= LOGOUT =================
     @Override
     public void logout(String refreshToken) {
-        refreshTokenRepository.findByToken(refreshToken).ifPresent(rt -> refreshTokenRepository.delete(rt));
+        refreshTokenRepository.findByToken(refreshToken)
+                .ifPresent(refreshTokenRepository::delete);
+    }
+
+    // ================= PRIVATE =================
+    private String createAndStoreRefreshToken(UUID userId) {
+
+        String token = UUID.randomUUID().toString();
+
+        var rt = RefreshToken.builder()
+                .token(token)
+                .userId(userId)
+                .expiresAt(Instant.now().plusSeconds(60L * 60L * 24L * 30L))
+                .build();
+
+        refreshTokenRepository.save(rt);
+
+        return token;
     }
 }
+        
+
 
