@@ -1,5 +1,6 @@
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\AuthApplication.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\config\KafkaConfig.java
+C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\config\RestTemplateConfig.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\config\SecurityConfig.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\event\DomainEvent.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\event\LoginSuccessEvent.java
@@ -7,7 +8,6 @@ C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\m
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\event\UserCreatedEvent.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\event\UserRegisteredEvent.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\ProcessedEvent.java
-C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\RefreshToken.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\Role.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\domain\User.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\dto\AuthResponse.java
@@ -22,5 +22,4 @@ C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\m
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\repository\UserRepository.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\service\AuthService.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\service\AuthServiceImpl.java
-C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\service\UserDetailsServiceImpl.java
 C:\Users\DELL\Desktop\projetx\bankpayx\services\auth-service\src\main\java\com\mansa\web\AuthController.java

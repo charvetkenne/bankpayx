@@ -16,6 +16,9 @@ import lombok.Setter;
 public class AuthResponse {
   
     private String message;
-    
+      // utile si tu ajoutes plus tard gateway token relay
+    private String accessToken;
+
+    private Long expiresIn;
     
 }

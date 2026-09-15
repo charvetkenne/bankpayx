@@ -2,6 +2,7 @@ package com.mansa.infrastructure.kafaka;
 
 
 import com.mansa.domain.ProcessedEvent;
+import com.mansa.domain.Role;
 import com.mansa.domain.User;
 import com.mansa.repository.ProcessedEventRepository;
 import com.mansa.repository.UserRepository;
@@ -28,8 +29,8 @@ public class UserEventConsumer {
     public void onUserCreated(UserCreatedEvent event) {
 
         try {
-            // IDPOTENCE
             if (eventRepository.existsById(event.eventId())) {
+                log.info("Event already processed: {}", event.eventId());
                 return;
             }
 
@@ -41,6 +42,7 @@ public class UserEventConsumer {
                     .id(event.userId())
                     .username(event.username())
                     .email(event.email())
+                    .role(Role.ROLE_USER)
                     .build();
 
             userRepository.save(user);
@@ -52,8 +54,8 @@ public class UserEventConsumer {
             );
 
         } catch (Exception e) {
-            log.error("Error processing event", e);
-            throw new RuntimeException(e); // retry + DLQ
+            log.error("Error processing event {}", event, e);
+            throw new RuntimeException(e);
         }
     }
 }

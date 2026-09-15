@@ -1,7 +1,6 @@
 com\mansa\infrastructure\keycloak\KeycloakService.class
 com\mansa\domain\Role.class
 com\mansa\config\KafkaConfig.class
-com\mansa\domain\RefreshToken$RefreshTokenBuilder.class
 com\mansa\repository\ProcessedEventRepository.class
 com\mansa\infrastructure\kafaka\UserEventConsumer.class
 com\mansa\domain\event\DomainEvent.class
@@ -13,12 +12,10 @@ com\mansa\domain\User.class
 com\mansa\dto\AuthResponse.class
 com\mansa\domain\User$UserBuilder.class
 com\mansa\domain\event\TokenIssuedEvent.class
-com\mansa\domain\RefreshToken.class
 com\mansa\dto\RegisterRequest$RegisterRequestBuilder.class
 com\mansa\config\SecurityConfig.class
 com\mansa\domain\event\LoginSuccessEvent.class
 com\mansa\dto\AuthResponse$AuthResponseBuilder.class
-com\mansa\service\UserDetailsServiceImpl.class
 com\mansa\dto\UserDto.class
 com\mansa\domain\event\UserCreatedEvent.class
 com\mansa\infrastructure\kafaka\AuthEventProducer.class

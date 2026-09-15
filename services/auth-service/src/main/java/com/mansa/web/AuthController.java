@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import java.util.Map;
 
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,11 @@ public class AuthController {
                 "authorities", auth.getAuthorities()
         );
     }
+        @PreAuthorize("hasRole('ADMIN')")
+        @GetMapping("/admin")
+        public String admin() {
+            return "ok";
+        }
     // @PostMapping("/login")
     // public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest req) {
     //     return ResponseEntity.ok(authService.login(req));

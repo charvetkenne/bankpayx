@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bankpayx_auth_db
     username: postgres
-    password: ${DB_PASSWORD}
+    password: 1406JEFFwork_
   jpa:
     hibernate:
       ddl-auto: update
@@ -34,7 +34,7 @@ eureka:
 
 keycloak:
   admin:
-    url: http://localhost:8080
+    url: http://localhost:8180
     token: YOUR_ADMIN_TOKEN
   realm: bankpayx    
 #jwt provider pour creer les cles en local 

@@ -1,0 +1,4 @@
+com\mansa\keycloak\listener\KeycloakKafkaEventListenerProviderFactory.class
+com\mansa\keycloak\listener\KafkaProducerService.class
+com\mansa\keycloak\listener\model\UserCreatedEvent.class
+com\mansa\keycloak\listener\KeycloakKafkaEventListenerProvider.class

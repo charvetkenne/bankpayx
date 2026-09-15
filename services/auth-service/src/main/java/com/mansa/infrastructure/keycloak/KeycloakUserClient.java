@@ -4,17 +4,17 @@ import com.mansa.dto.RegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+//import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.UUID;
-
-@Service
+@Component
 @RequiredArgsConstructor
 public class KeycloakUserClient {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     @Value("${keycloak.admin.url}")
     private String keycloakUrl;
@@ -50,6 +50,10 @@ public class KeycloakUserClient {
 
         ResponseEntity<Void> response =
                 restTemplate.exchange(url, HttpMethod.POST, request, Void.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Keycloak user creation failed");
+        }
 
         String location = response.getHeaders().getLocation().toString();
 
