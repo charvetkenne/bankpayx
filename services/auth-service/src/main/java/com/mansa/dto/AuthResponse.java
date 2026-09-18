@@ -1,5 +1,7 @@
 package com.mansa.dto;
 
+//import com.mansa.domain.User.UserBuilder;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -12,9 +14,11 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class AuthResponse {
+  
+    private String message;
+      // utile si tu ajoutes plus tard gateway token relay
     private String accessToken;
-    private String refreshToken;
-    private long expiresInSeconds;
-    @Builder.Default
-    private String tokenType = "Bearer";
+
+    private Long expiresIn;
+    
 }

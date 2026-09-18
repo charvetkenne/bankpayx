@@ -5,7 +5,12 @@ package com.mansa.web;
 import com.mansa.dto.*;
 import com.mansa.service.AuthService;
 import jakarta.validation.Valid;
+
+import java.util.Map;
+
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,20 +25,32 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(req));
     }
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest req) {
-        return ResponseEntity.ok(authService.login(req));
+    
+      @GetMapping("/me")
+    public Map<String, Object> me(Authentication auth) {
+        return Map.of(
+                "username", auth.getName(),
+                "authorities", auth.getAuthorities()
+        );
     }
+        @PreAuthorize("hasRole('ADMIN')")
+        @GetMapping("/admin")
+        public String admin() {
+            return "ok";
+        }
+    // @PostMapping("/login")
+    // public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest req) {
+    //     return ResponseEntity.ok(authService.login(req));
+    // }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestParam("token") String refreshToken) {
-        return ResponseEntity.ok(authService.refreshToken(refreshToken));
-    }
+    // @PostMapping("/refresh")
+    // public ResponseEntity<AuthResponse> refresh(@RequestParam("token") String refreshToken) {
+    //     return ResponseEntity.ok(authService.refreshToken(refreshToken));
+    // }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestParam("token") String refreshToken) {
-        authService.logout(refreshToken);
-        return ResponseEntity.noContent().build();
-    }
+    // @PostMapping("/logout")
+    // public ResponseEntity<Void> logout(@RequestParam("token") String refreshToken) {
+    //     authService.logout(refreshToken);
+    //     return ResponseEntity.noContent().build();
+    // }
 }

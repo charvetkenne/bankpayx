@@ -10,7 +10,5 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-
-spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
