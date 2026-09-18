@@ -1,24 +1,22 @@
 package com.mansa.infrastructure.kafaka;
 
 
-//import lombok.RequiredArgsConstructor;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
-@Component
-//@RequiredArgsConstructor
-public class AuthEventProducer {
-    
-    @Autowired 
-    private final KafkaTemplate<String, Object> kafkaTemplate ;
+import com.mansa.domain.event.DomainEvent;
 
-    public AuthEventProducer( KafkaTemplate<String, Object> kafka) {
-        this.kafkaTemplate = kafka;
-    }
-    
-    public void send(String topic, Object event) {
-        kafkaTemplate.send(topic, event);
+import lombok.RequiredArgsConstructor;
+
+
+@Component
+@RequiredArgsConstructor
+public class AuthEventProducer {
+
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private static final String TOPIC = "auth.events";
+
+    public void send(DomainEvent event) {
+        kafkaTemplate.send(TOPIC, event.eventType(), event);
     }
 }

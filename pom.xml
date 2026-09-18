@@ -38,13 +38,13 @@
     <dependencyManagement>
         <dependencies>
             <!-- Import Spring Boot managed dependencies -->
-            <dependency>
+            <!-- <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring.boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
+            </dependency> -->
 
             <!-- Lombok (shared version) -->
             <dependency>
@@ -66,7 +66,7 @@
   <!-- Common properties -->
     <properties>
         <java.version>17</java.version>
-        <spring.boot.version>3.5.6</spring.boot.version>
+        <spring.boot.version>3.3.4</spring.boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -76,15 +76,30 @@
         <pluginManagement>
             <plugins>
 
+                    <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>17</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.34</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
                 <!-- Compiler Plugin -->
-                <plugin>
+                <!-- <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
                     </configuration>
-                </plugin>
+                </plugin> -->
 
                 <!-- Spring Boot Plugin -->
                 <plugin>
