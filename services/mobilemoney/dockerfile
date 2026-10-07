@@ -1,0 +1,25 @@
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+RUN addgroup -S bankpayx && adduser -S bankpayx -G bankpayx
+
+WORKDIR /app
+
+COPY target/mobilemoney-service-*.jar app.jar
+
+RUN chown bankpayx:bankpayx app.jar
+
+USER bankpayx
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget -q -O- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+
+ENTRYPOINT ["java", \
+    "--enable-preview", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:+UseG1GC", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-Dspring.profiles.active=docker", \
+    "-jar", "app.jar"]

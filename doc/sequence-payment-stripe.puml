@@ -1,0 +1,165 @@
+@startuml sequence-payment-stripe
+title card-service — Flux de paiement carte (Stripe)
+
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+skinparam BoxPadding 10
+
+actor "Frontend\n(React + Stripe.js)" as FE
+
+box "card-service — API" #F2F6FF
+participant "CardPaymentController" as Controller
+end box
+
+box "card-service — Application" #FFF6E8
+participant "CardPaymentService\n(ProcessCardPaymentUseCase)" as Service
+participant "CardPayment\n(domain aggregate)" as Domain
+end box
+
+box "card-service — Infrastructure" #EAF7EE
+participant "TransactionPersistenceAdapter" as Persistence
+participant "StripeAdapter\n(PaymentGatewayPort)" as Adapter
+participant "StripeMapper" as Mapper
+participant "StripePaymentProcessor" as Processor
+participant "StripeClient" as Client
+participant "KafkaProducerAdapter\n(EventPublisherPort)" as KafkaAdapter
+end box
+
+participant "Stripe Java SDK\n(PaymentIntent)" as SDK
+cloud "Stripe API" as StripeAPI
+queue "Kafka\n(card.payment.events)" as Kafka
+
+== 1. Réception de la requête ==
+
+FE -> Controller : POST /api/v1/payments\n{ paymentMethodId, amount, currency, merchantId }
+activate Controller
+
+Controller -> Service : process(Command)
+activate Service
+
+== 2. Création & persistance initiale ==
+
+Service -> Domain : CardPayment.initiate(money, merchantId,\ndescription, correlationId, paymentMethodId)
+activate Domain
+Domain --> Service : payment [status=PENDING]
+deactivate Domain
+
+Service -> Persistence : save(payment)
+activate Persistence
+Persistence --> Service : payment persisté
+deactivate Persistence
+
+== 3. Autorisation via Stripe ==
+
+Service -> Adapter : authorize(payment)
+activate Adapter
+
+Adapter -> Mapper : toStripeRequest(payment)
+activate Mapper
+Mapper --> Adapter : StripePaymentRequest
+deactivate Mapper
+
+Adapter -> Processor : authorizeWithRetryFull(request, maxRetries)
+activate Processor
+
+loop jusqu'à maxRetries tentatives (idempotencyKey fixe)
+    Processor -> Client : createPaymentIntent(request)
+    activate Client
+
+    Client -> Client : Stripe.apiKey = secretKey
+    Client -> Client : PaymentIntentCreateParams.builder()\n.setAmount() .setCurrency() .setPaymentMethod()\n.setConfirm(true) .setReturnUrl() .build()
+
+    Client -> SDK : PaymentIntent.create(params)
+    activate SDK
+
+    SDK -> StripeAPI : HTTPS POST /v1/payment_intents
+    activate StripeAPI
+    StripeAPI --> SDK : 200 OK\n{ id, status, client_secret, next_action }
+    deactivate StripeAPI
+
+    SDK --> Client : PaymentIntent
+    deactivate SDK
+
+    alt Stripe répond avec succès
+        Client --> Processor : StripePaymentResponse\n(paymentIntentId, status,\nrequiresAction, clientSecret, redirectUrl)
+        deactivate Client
+    else CardException (carte refusée)
+        Client --> Processor : throw StripeException\n[declineCode]
+        deactivate Client
+        Processor -> Processor : backoff puis nouvelle tentative\n(sauf si dernier essai)
+    end
+end
+
+Processor --> Adapter : StripePaymentResponse
+deactivate Processor
+
+== 4. Mise à jour du domaine selon la réponse ==
+
+alt response.requiresAction == true
+    Adapter -> Domain : payment.markRequiresAction(\npaymentIntentId, clientSecret, redirectUrl)
+    note right of Domain
+        Statut reste PENDING.
+        Le frontend devra soit :
+        - rediriger vers redirectUrl (PayPal, Bancontact, iDEAL…)
+        - appeler stripe.handleNextAction(clientSecret) (3DS)
+    end note
+else paiement autorisé directement
+    Adapter -> Domain : (statut géré par le service appelant)
+end
+
+Adapter --> Service : paymentIntentId
+deactivate Adapter
+
+alt autorisation réussie
+    Service -> Domain : payment.markAuthorized(gatewayId)
+else exception levée par l'adapter
+    Service -> Domain : payment.markFailed(reason)
+end
+activate Domain
+Domain --> Service : domainEvents émis
+deactivate Domain
+
+Service -> Persistence : save(payment) [état final]
+activate Persistence
+Persistence --> Service : OK
+deactivate Persistence
+
+== 5. Publication des événements métier ==
+
+Service -> KafkaAdapter : publishAll(payment.pullDomainEvents())
+activate KafkaAdapter
+KafkaAdapter -> Kafka : send("card.payment.events",\nPaymentAuthorizedKafkaEvent | PaymentFailedKafkaEvent)
+KafkaAdapter --> Service : ack asynchrone
+deactivate KafkaAdapter
+
+Service --> Controller : CardPayment (résultat)
+deactivate Service
+
+Controller -> Controller : PaymentApiMapper.toResponse(payment)
+Controller --> FE : 201 Created\n{ transactionId, status, requiresAction,\nclientSecret, redirectUrl }
+deactivate Controller
+
+== 6. Action complémentaire côté client (conditionnelle) ==
+
+alt requiresAction == true AND redirectUrl présent
+    FE -> StripeAPI : window.location.href = redirectUrl\n(PayPal, Bancontact, iDEAL, Klarna…)
+    StripeAPI --> FE : redirection vers /payment/callback\n?payment_intent=...&redirect_status=...
+else requiresAction == true AND clientSecret présent
+    FE -> SDK : stripe.handleNextAction(clientSecret)
+    SDK -> StripeAPI : confirmation 3DS / OTP
+    StripeAPI --> SDK : PaymentIntent mis à jour
+    SDK --> FE : { paymentIntent.status }
+else requiresAction == false
+    FE -> FE : navigate("/payments/success")
+end
+
+== 7. Confirmation asynchrone (webhook — source de vérité) ==
+
+StripeAPI -> Controller : POST /webhooks/stripe\n(payment_intent.succeeded |\npayment_intent.payment_failed)
+note right of StripeAPI
+    Le webhook reste la source de vérité finale,
+    notamment pour les paiements avec redirection
+    où la confirmation arrive de façon asynchrone.
+end note
+
+@enduml

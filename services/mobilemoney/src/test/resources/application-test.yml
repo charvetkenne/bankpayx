@@ -1,0 +1,71 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+    consumer:
+      group-id: mobilemoney-test-group
+      auto-offset-reset: earliest
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/bankpayx-test
+
+operators:
+  mtn:
+    base-url: http://localhost:8089/mtn
+    api-key: test-mtn-key
+    api-secret: test-mtn-secret
+    subscription-key: test-sub-key
+    callback-url: http://localhost:8080/api/v1/callbacks/mtn
+    environment: sandbox
+    connect-timeout-ms: 1000
+    read-timeout-ms: 5000
+  orange:
+    base-url: http://localhost:8089/orange
+    client-id: test-orange-client
+    client-secret: test-orange-secret
+    merchant-id: test-merchant
+    callback-url: http://localhost:8080/api/v1/callbacks/orange
+    connect-timeout-ms: 1000
+    read-timeout-ms: 5000
+  wave:
+    base-url: http://localhost:8089/wave
+    api-key: test-wave-key
+    webhook-secret: test-wave-secret
+    callback-url: http://localhost:8080/api/v1/callbacks/wave
+    connect-timeout-ms: 1000
+    read-timeout-ms: 5000
+  cinetpay:
+    base-url: http://localhost:8089/cinetpay
+    api-key: test-cinetpay-key
+    site-id: test-site-id
+    secret-key: test-cinetpay-secret
+    callback-url: http://localhost:8080/api/v1/callbacks/cinetpay
+    return-url: http://localhost:3000/payment/result
+    connect-timeout-ms: 1000
+    read-timeout-ms: 5000
+
+logging:
+  level:
+    com.bankpayx: DEBUG
+    org.springframework.security: DEBUG
