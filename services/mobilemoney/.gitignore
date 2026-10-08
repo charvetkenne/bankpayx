@@ -1,1 +1,8 @@
-/target/
+target/
+.xml.txt
+build/
+.env
+.classpath
+.mvn/wrapper
+.vscode
+**/src/main/resources/application.yml

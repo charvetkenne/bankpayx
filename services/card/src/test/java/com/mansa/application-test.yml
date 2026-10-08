@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url:      jdbc:tc:postgresql:15:///testdb
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  flyway:
+    enabled: false   # Testcontainers gère le schéma via ddl-auto
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+stripe:
+  secret-key:     sk_test_placeholder
+  webhook-secret: whsec_placeholder
+
+paypal:
+  client-id:     test_client_id
+  client-secret: test_client_secret
+  base-url:      https://api-m.sandbox.paypal.com
+
+logging:
+  level:
+    com.mansa.card: DEBUG
