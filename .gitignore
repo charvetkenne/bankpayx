@@ -34,6 +34,7 @@
 # =============================================================================
 # Artefacts de build dans n'importe quel sous-projet
 **/target/
+**/bin/
 **/*.class
 **/*.jar
 **/*.war
