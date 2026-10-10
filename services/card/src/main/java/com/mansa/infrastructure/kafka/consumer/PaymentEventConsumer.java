@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * Listens to events from other microservices (e.g. transaction-service)
  * that card-service needs to react to.
  */
-@Slf4j
+@Slf4j 
 @Component
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
