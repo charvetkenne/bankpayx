@@ -12,6 +12,8 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^6.4.0",
     "@stripe/stripe-js": "^9.6.0",
+    "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/auth-ui-shared": "^0.1.8",
     "axios": "^1.16.1",
     "keycloak-js": "^26.2.4",
     "react": "^19.2.6",

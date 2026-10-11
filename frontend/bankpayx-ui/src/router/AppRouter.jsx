@@ -4,6 +4,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import PaymentPage from "../pages/PaymentPage";
 import CardPaymentPage from "../pages/CardPaymentPage";
+import LoginPage from "../pages/LogingPage";
 import PaypalPaymentPage from "../pages/PaypalPaymentPage";
 import SuccessPage from "../pages/SuccessPage";
 import PaypalSuccessPage from "../pages/PaypalSuccessPage";
@@ -22,6 +23,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/payments" element={<PaymentPage />} />
+        <Route path="/loging" element={<LoginPage/>} />
         <Route
           path="/payments/card"
           element={
