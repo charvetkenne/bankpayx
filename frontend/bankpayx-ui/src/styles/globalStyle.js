@@ -5,8 +5,7 @@ export const injectFonts = () => {
   const link = document.createElement("link");
   link.id = "bankpayx-fonts";
   link.rel = "stylesheet";
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap";
+  link.href = "https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap";
   document.head.appendChild(link);
 };
 
@@ -18,6 +17,9 @@ const globalStyle = `
     min-height: 100vh;
     color: ${theme.text};
   }
+  
+  /* ... (Garde tous tes styles existants : .bpx-input, .bpx-btn-gold, etc.) ... */
+
   .bpx-input {
     width: 100%;
     background: ${theme.bg};
@@ -35,65 +37,86 @@ const globalStyle = `
     box-shadow: 0 0 0 3px ${theme.gold}18;
   }
   .bpx-input::placeholder { color: ${theme.textDim}; }
-  .bpx-btn-gold {
-    background: linear-gradient(135deg, ${theme.gold}, ${theme.goldLight});
-    color: #0A0800;
-    border: none;
-    border-radius: 8px;
-    padding: 13px 28px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'Sora', system-ui, sans-serif;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    letter-spacing: 0.02em;
+  
+  /* ... (Garde .bpx-btn-gold, .bpx-btn-ghost, .bpx-card, .bpx-label, animations) ... */
+
+  /* ==========================================================================
+     SURCHARGES POUR L'UI D'AUTHENTIFICATION SUPABASE
+     ========================================================================== */
+  .bpx-root .supabase-auth-ui_ui-container {
+    width: 100% !important;
   }
-  .bpx-btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
-  .bpx-btn-gold:active { transform: translateY(0); }
-  .bpx-btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .bpx-btn-ghost {
-    background: transparent;
-    border: 1px solid ${theme.border};
-    border-radius: 8px;
-    padding: 11px 24px;
-    font-size: 14px;
-    color: ${theme.textMuted};
-    cursor: pointer;
-    font-family: 'Sora', system-ui, sans-serif;
-    transition: all 0.2s;
+  .bpx-root .supabase-auth-ui_ui-button {
+    background: linear-gradient(135deg, ${theme.gold}, ${theme.goldLight}) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    color: #0A0800 !important;
+    cursor: pointer !important;
+    transition: opacity 0.2s, transform 0.1s !important;
+    font-family: 'Sora', system-ui, sans-serif !important;
+    width: 100% !important;
+    margin-top: 8px !important;
   }
-  .bpx-btn-ghost:hover { border-color: ${theme.borderLight}; color: ${theme.text}; }
-  .bpx-card {
-    background: ${theme.surface};
-    border: 1px solid ${theme.border};
-    border-radius: 14px;
-    padding: 28px;
+  .bpx-root .supabase-auth-ui_ui-button:hover {
+    opacity: 0.9 !important;
+    transform: translateY(-1px) !important;
   }
-  .bpx-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: ${theme.textMuted};
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: block;
+  .bpx-root .supabase-auth-ui_ui-button:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
   }
-  .fade-in { animation: fadeIn 0.35s ease forwards; }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .bpx-root .supabase-auth-ui_ui-input {
+    background: ${theme.bg} !important;
+    border: 1px solid ${theme.border} !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    color: ${theme.text} !important;
+    font-size: 14px !important;
+    font-family: 'Sora', system-ui, sans-serif !important;
+    outline: none !important;
+    transition: border-color 0.2s !important;
+    width: 100% !important;
   }
-  .slide-up { animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
+  .bpx-root .supabase-auth-ui_ui-input:focus {
+    border-color: ${theme.gold} !important;
+    box-shadow: 0 0 0 3px ${theme.gold}18 !important;
   }
-  .pulse { animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-  .spin { animation: spin 1s linear infinite; }
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+  .bpx-root .supabase-auth-ui_ui-input::placeholder {
+    color: ${theme.textDim} !important;
+  }
+  .bpx-root .supabase-auth-ui_ui-label {
+    color: ${theme.textMuted} !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+  }
+  .bpx-root .supabase-auth-ui_ui-anchor {
+    color: ${theme.gold} !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    display: block !important;
+    text-align: center !important;
+    margin-top: 12px !important;
+  }
+  .bpx-root .supabase-auth-ui_ui-anchor:hover {
+    text-decoration: underline !important;
+  }
+  .bpx-root .supabase-auth-ui_ui-message {
+    color: ${theme.textMuted} !important;
+    font-size: 13px !important;
+    margin-top: 8px !important;
+    text-align: center !important;
+  }
+  /* Masquer le lien "Mot de passe oublié" en mode Magic Link (inutile) */
+  .bpx-root a[href*="forgotten_password"] {
+    display: none !important;
   }
 `;
 
