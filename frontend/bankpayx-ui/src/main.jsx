@@ -5,6 +5,9 @@ import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+     {/* L'AuthProvider DOIT être au-dessus de tout le reste */}
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>,
 )
