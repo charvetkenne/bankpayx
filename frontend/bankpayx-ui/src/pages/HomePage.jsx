@@ -1,10 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser } from "../services/authService";
+import { useAuth } from "../auth/AuthProvider";
 import theme from "../theme";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  const auth = useAuth();
+  const user = auth?.user ?? null;
+
+  // Lecture synchrone depuis le contexte Supabase (getCurrentUser() est asynchrone)
+  const meta = user?.user_metadata || {};
+  const firstName = meta.first_name || user?.email?.split("@")[0] || "";
+  const lastName = meta.last_name || "";
+  const roles = Array.isArray(user?.app_metadata?.roles) ? user.app_metadata.roles : [];
 
   return (
     <div className="slide-up" style={{ maxWidth: 800, margin: "0 auto", padding: "60px 32px" }}>
@@ -13,8 +20,14 @@ export default function HomePage() {
           Bonjour
         </p>
         <h1 style={{ fontSize: 38, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 12 }}>
-          {user.firstName}{" "}
-          <span style={{ color: theme.textMuted, fontWeight: 300 }}>{user.lastName}</span>
+          {user ? (
+            <>
+              {firstName}{" "}
+              <span style={{ color: theme.textMuted, fontWeight: 300 }}>{lastName}</span>
+            </>
+          ) : (
+            "Bienvenue"
+          )}
         </h1>
         <p style={{ color: theme.textMuted, fontSize: 15 }}>
           Quel paiement souhaitez-vous effectuer aujourd'hui ?
@@ -57,18 +70,20 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Statut session */}
-      <div style={{ background: theme.surfaceHigh, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: theme.success, flexShrink: 0 }} className="pulse" />
-        <div style={{ fontSize: 12, color: theme.textMuted }}>
-          <span style={{ color: theme.text, fontWeight: 500 }}>Session sécurisée · </span>
-          OAuth2 PKCE · JWT actif ·{" "}
-          <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>
-            realm: {import.meta.env.VITE_KEYCLOAK_REALM || "bankpayx"}
-          </span>
-          {" · "}Rôles : <span style={{ color: theme.gold }}>{user.roles.slice(0, 3).join(", ")}</span>
+      {/* Statut session : affiché uniquement si connecté */}
+      {user && (
+        <div style={{ background: theme.surfaceHigh, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: theme.success, flexShrink: 0 }} className="pulse" />
+          <div style={{ fontSize: 12, color: theme.textMuted }}>
+            <span style={{ color: theme.text, fontWeight: 500 }}>Session sécurisée · </span>
+            Supabase Auth · JWT actif
+            {" · "}Rôles :{" "}
+            <span style={{ color: theme.gold }}>
+              {roles.length > 0 ? roles.slice(0, 3).join(", ") : "aucun"}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
