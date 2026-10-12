@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../services/supabaseClient';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_CARD_SERVICE_URL,
