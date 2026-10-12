@@ -1,11 +1,29 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { getCurrentUser, logout } from "../services/authService";
+import { useAuth } from "../auth/AuthProvider";
 import theme from "../theme";
+
+/**
+ * Construit l'affichage du profil à partir de l'utilisateur Supabase.
+ * Lecture synchrone : l'utilisateur vient du contexte AuthProvider,
+ * jamais de getCurrentUser() (qui est asynchrone).
+ */
+function buildProfile(user) {
+  if (!user) return null;
+  const meta = user.user_metadata || {};
+  const email = user.email || "";
+  const firstName = meta.first_name || email.split("@")[0] || "Utilisateur";
+  const lastName = meta.last_name || "";
+  const initials = `${firstName[0] || "U"}${lastName[0] || ""}`.toUpperCase();
+  return { firstName, email, initials };
+}
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = getCurrentUser();
+  const auth = useAuth();
+
+  const profile = buildProfile(auth?.user);
+  const logout = auth?.logout;
   const isHome = location.pathname === "/";
 
   return (
@@ -49,61 +67,74 @@ export default function Navbar() {
           </button>
         )}
 
-        {/* Avatar + infos user */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: "50%",
-            background: `${theme.gold}22`, border: `1px solid ${theme.gold}44`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 600, color: theme.gold,
-          }}>
-                    {/* // dans la section des actions, avant le bloc user */}
-        {/* {!isHome && (
-            <button className="bpx-btn-ghost" onClick={() => navigate("/")}
-                style={{ padding: "8px 16px", fontSize: 13 }}>
-                ← Accueil
-            </button>
-        )} */}
+        {profile ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Avatar */}
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                background: `${theme.gold}22`,
+                border: `1px solid ${theme.gold}44`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: 600,
+                color: theme.gold,
+              }}
+            >
+              {profile.initials}
+            </div>
 
-        {/* <button
-            className="bpx-btn-ghost"
-            onClick={() => navigate("/history")}
-            style={{ padding: "8px 16px", fontSize: 13,
-                color: location.pathname === "/history" ? theme.gold : theme.textMuted,
-                borderColor: location.pathname === "/history" ? theme.gold : theme.border }}
-        >
-            Historique
-        </button> */}
-        {/* separateur */}
-        <div style={{with: 1, height: 24, background: theme.border, margin:"4px"}}> </div>
-            {user.initials}
-          </div>
-          <div style={{ lineHeight: 1.3 }}>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>{user.firstName}</div>
-            <div style={{ fontSize: 11, color: theme.textMuted }}>{user.email}</div>
-          </div>
-        
+            {/* Infos utilisateur */}
+            <div style={{ lineHeight: 1.3 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: theme.text }}>{profile.firstName}</div>
+              <div style={{ fontSize: 11, color: theme.textMuted }}>{profile.email}</div>
+            </div>
 
-          <button
+            {/* Séparateur */}
+            <div style={{ width: 1, height: 24, background: theme.border, margin: "0 4px" }} />
+
+            <button
               className="bpx-btn-ghost"
               onClick={() => navigate("/history")}
-              style={{ padding: "6px 14px", fontSize: 12,
-                  color: location.pathname === "/history" ? theme.gold : theme.textMuted,
-                  borderColor: location.pathname === "/history" ? theme.gold : theme.border }}
-          >
+              style={{
+                padding: "6px 14px",
+                fontSize: 12,
+                color: location.pathname === "/history" ? theme.gold : theme.textMuted,
+                borderColor: location.pathname === "/history" ? theme.gold : theme.border,
+              }}
+            >
               Historique
-          </button>
+            </button>
+
+            <button
+              onClick={logout}
+              style={{
+                background: "none",
+                border: `1px solid ${theme.border}`,
+                borderRadius: 6,
+                padding: "5px 10px",
+                color: theme.textMuted,
+                fontSize: 12,
+                cursor: "pointer",
+                marginLeft: 4,
+              }}
+            >
+              Déconnexion
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={logout}
-            style={{
-              background: "none", border: `1px solid ${theme.border}`,
-              borderRadius: 6, padding: "5px 10px",
-              color: theme.textMuted, fontSize: 12, cursor: "pointer", marginLeft: 4,
-            }}
+            className="bpx-btn-ghost"
+            onClick={() => navigate("/login")}
+            style={{ padding: "8px 16px", fontSize: 13 }}
           >
-            Déconnexion
+            Se connecter
           </button>
-        </div>
+        )}
       </div>
     </nav>
   );
