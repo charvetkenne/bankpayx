@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "../auth/AuthProvider";
 
 /**
  * Protège une route — si l'utilisateur n'est pas authentifié via Supabase,

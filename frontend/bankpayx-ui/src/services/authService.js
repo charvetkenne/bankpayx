@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../services/supabaseClient";
 
 /**
  * Récupère les informations de l'utilisateur connecté
