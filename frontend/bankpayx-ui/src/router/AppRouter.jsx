@@ -4,7 +4,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import PaymentPage from "../pages/PaymentPage";
 import CardPaymentPage from "../pages/CardPaymentPage";
-import LoginPage from "../pages/LogingPage";
+import LoginPage from "../pages/LoginPage";
 import PaypalPaymentPage from "../pages/PaypalPaymentPage";
 import SuccessPage from "../pages/SuccessPage";
 import PaypalSuccessPage from "../pages/PaypalSuccessPage";
