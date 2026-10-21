@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import ProtectedRoute from "../components/ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import PaymentPage from "../pages/PaymentPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 import CardPaymentPage from "../pages/CardPaymentPage";
 import LoginPage from "../pages/LoginPage";
 import PaypalPaymentPage from "../pages/PaypalPaymentPage";
@@ -25,6 +26,11 @@ export default function AppRouter() {
             /loging est conservée pour les anciens liens (ex. Navbar) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/loging" element={<LoginPage />} />
+
+        
+        {/* Définir / réinitialiser le mot de passe (lien reçu par e-mail) */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
 
         <Route
           path="/payments/card"
@@ -63,6 +69,8 @@ export default function AppRouter() {
     </BrowserRouter>
   );
 }
+
+
 
 
 // import { BrowserRouter, Routes, Route } from "react-router-dom";
