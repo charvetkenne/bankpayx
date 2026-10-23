@@ -2,9 +2,16 @@
 # ── Stage 1 : Build ──────────────────────────────────────────────────────────
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
+# Copie le POM parent et installe-le dans le cache local Maven
 COPY pom.xml .
+RUN mvn install -N -q  # -N = non-recursive, installe juste le POM parent
+
+# Copie le POM du module card et ses dépendances
+COPY services/card/pom.xml services/card/pom.xml
+WORKDIR /app/services/card
 RUN mvn dependency:go-offline -q
-COPY src ./src
+# Copie le code source et build
+COPY services/card/src ./src
 RUN mvn clean package -DskipTests -q
 
 # ── Stage 2 : Optimiseur (Extraction des couches) ───────────────────────────
