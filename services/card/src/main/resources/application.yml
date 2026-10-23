@@ -4,12 +4,12 @@ spring:
 
   # ── Database ───────────────────────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/*****                           
-    username: postgres
-    password: 
+    url: ${DB_URL}?sslmode=required                           
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 3
       minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
@@ -31,7 +31,12 @@ spring:
 
   # ── Kafka ──────────────────────────────────────────────────────────────────
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      # Spring résoudra automatiquement les variables ${...} à l'intérieur de cette chaîne
+      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -53,7 +58,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: 
+          issuer-uri: ${SUPABASE_ISSUER_URI}
+          jwk-set-uri: ${SUPABASE_JWKS_URI}
           # jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:bankpayx}/protocol/openid-connect/certs
 
 # ── Eureka ─────────────────────────────────────────────────────────────────────
@@ -75,24 +81,24 @@ server:
 
 # ── Stripe ─────────────────────────────────────────────────────────────────────
 stripe:
-  secret-key: 
-  webhook-secret: 
-  publishable-key: 
+  secret-key: ${STRIPE_SECERT_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY}
   # currency: eur
   sandbox: true
-  return-url:      ${STRIPE_RETURN_URL:http://localhost:5173/payment/callback}
+  return-url: ${STRIPE_RETURN_URL}
 
 # ── External Clients ───────────────────────────────────────────────────────────
 # clients:
 #   fraud-detection:
 #     url: ${FRAUD_SERVICE_URL:http://fraud-service}
 paypal:
-  client-id:                 
-  client-secret: 
-  base-url: 
+  client-id: ${PAYPAL_CLIENT_ID}               
+  client-secret: ${PAYPAL_CLIENT_SECRET}
+  base-url: https://api-m.sandbox.paypal.com
   brand-name: BankPayX
-  webhook-id: 
-
+  webhook-id: ${PAYPAL_WEBHOOK_ID}
+ 
 # ── Actuator ───────────────────────────────────────────────────────────────────
 management:
   endpoints:
@@ -122,7 +128,9 @@ logging:
 # ── OpenAPI ────────────────────────────────────────────────────────────────────
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    # path: /v3/api-docs
+    enabled: false
   swagger-ui:
-    path: /swagger-ui.html
+    # path: /swagger-ui.html
+    enabled: false
     operationsSorter: method

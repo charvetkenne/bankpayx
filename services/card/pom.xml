@@ -193,26 +193,26 @@
     </dependencyManagement>
 
     <!-- Build (hérite des plugins du parent) -->
-    <build>
+   <build>
         <plugins>
-
-            <!-- Plugin Docker (JIB) -->
+            <!-- Optionnel : Si tu gardes Jib, aligne les flags sur l'optimisation 512MB -->
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
                 <configuration>
                     <to>
-                        <image>your-aws-account-id.dkr.ecr.eu-west-1.amazonaws.com/${project.artifactId}</image>
+                        <image>ton-registre/card-service</image>
                     </to>
                     <container>
                         <jvmFlags>
-                            <jvmFlag>-Xms256m</jvmFlag>
-                            <jvmFlag>-Xmx512m</jvmFlag>
+                            <jvmFlag>-Xms64m</jvmFlag>
+                            <jvmFlag>-Xmx192m</jvmFlag>
+                            <jvmFlag>-XX:MaxMetaspaceSize=96m</jvmFlag>
+                            <jvmFlag>-XX:+UseSerialGC</jvmFlag>
                         </jvmFlags>
                     </container>
                 </configuration>
             </plugin>
-
         </plugins>
-  </build>
+    </build>
 </project>
