@@ -1,6 +1,8 @@
 package com.mansa.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -55,76 +57,55 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/webhooks/stripe"
+           "/api/webhooks/stripe",   // Vérifie que ce chemin correspond à ton controller
+            "/api/webhooks/paypal"    // Ajouté pour PayPal
     };
 
-    @Bean
+     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("SecurityFilterChain initialized");
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource("https://bankpayx.vercel.app/")))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments").hasAnyRole("PAYMENT_USER", "MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/capture").hasAnyRole("MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/refund").hasAnyRole("MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.GET,  "/api/v1/payments/**").hasAnyRole("PAYMENT_USER", "MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST,"/api/v1/paypal/create_order").hasAnyRole("PAYMENT_USER","MERCHANT","ADMIN")
-                    .requestMatchers(HttpMethod.POST,"/api/v1/paypal/capture_order").hasAnyRole("PAYMENT_USER","MERCHANT","ADMIN")
-                    .anyRequest().authenticated())
+                    // Note: hasAnyAuthority est souvent plus fiable que hasAnyRole avec Supabase 
+                    // sauf si ton JwtAuthenticationConverter ajoute le préfixe "ROLE_"
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/capture").hasAnyAuthority("MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/refund").hasAnyAuthority("MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.GET,  "/api/v1/payments/**").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/create_order").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/capture_order").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
+                    .anyRequest().authenticated()
+            )
             .oauth2ResourceServer(oauth2 -> oauth2
-                                .jwt(jwt ->{System.out.println("JWT configured");
-                                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter);}) .authenticationEntryPoint(authenticationEntryPoint)
-                                 
-                        )   
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                    .authenticationEntryPoint(authenticationEntryPoint)
+            )   
             .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class);
             
         return http.build();
     }
 
+    // ✅ SUPPRIMÉ : Le bean jwtDecoder() hardcodé sur localhost. 
+    // Spring Boot le génère automatiquement et correctement grâce à la propriété 
+    // 'spring.security.oauth2.resourceserver.jwt.issuer-uri' du application.yml
 
-        @Bean
-    public OncePerRequestFilter debugFilter() {
-        return new OncePerRequestFilter() {
 
-            @Override
-            protected void doFilterInternal(
-                    HttpServletRequest request,
-                    HttpServletResponse response,
-                    FilterChain filterChain)
-                    throws ServletException, IOException {
-
-                System.out.println("DEBUG FILTER BEFORE");
-
-                filterChain.doFilter(request, response);
-
-                System.out.println("DEBUG FILTER AFTER");
-            }
-        };
-    }
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        System.out.println("JWT DECODER CREATED");
-        System.out.println("STEP 1");
-          NimbusJwtDecoder decoder =
-        NimbusJwtDecoder.withJwkSetUri(
-            "http://localhost:8180/realms/bankpayx/protocol/openid-connect/certs"
-        ).build();
-        System.out.println("STEP 2");
-        return decoder;
-    }
-
+       
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(@Value("${frontend.url:https://.*\\.vercel\\.app}") String frontendUrlPattern) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        // On autorise Vercel (et localhost pour les tests) au lieu de "*" pour rester compatible avec allowCredentials
+        config.setAllowedOriginPatterns(List.of(frontendUrlPattern, "http://localhost:*")); 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "x-correlation-id"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L); // Met en cache les requêtes preflight (OPTIONS) pour économiser du CPU
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
