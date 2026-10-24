@@ -1,6 +1,7 @@
 package com.mansa.infrastructure.paypal.webhook;
 
 import com.mansa.application.port.in.CapturePayPalOrderUseCase;
+import com.mansa.application.port.out.EventPublisherPort;
 import com.mansa.infrastructure.paypal.dto.PayPalWebhookEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class PayPalWebhookController {
 
     private final CapturePayPalOrderUseCase captureUseCase;
     private final ObjectMapper              objectMapper;
-
+     private final EventPublisherPort eventPublisherPort; 
     @PostMapping
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
@@ -72,6 +73,7 @@ public class PayPalWebhookController {
             return ResponseEntity.internalServerError().body("Webhook processing failed");
         }
 
+          // PayPal attend un 200 OK rapidement, sinon il retry
         return ResponseEntity.ok("OK");
     }
 

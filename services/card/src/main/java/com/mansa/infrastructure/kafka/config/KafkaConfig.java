@@ -60,13 +60,25 @@ public class KafkaConfig {
                 new JsonDeserializer<>(Object.class, false));
     }
 
+     /**
+     * On injecte le ConsumerFactory créé automatiquement par Spring Boot.
+     * Cela garantit que les configurations Upstash (SASL_SSL, credentials) 
+     * définies dans application.yml sont bien appliquées.
+     */
+
     @SuppressWarnings("null")
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
+            ConsumerFactory<String, Object> consumerFactory) {
+        
         var factory = new ConcurrentKafkaListenerContainerFactory<String, Object>();
-        factory.setConsumerFactory(consumerFactory());
-        factory.setConcurrency(3);
+        factory.setConsumerFactory(consumerFactory);
+        
+        // CRUCIAL pour 0.1 CPU : 1 seul thread de consommation.
+        // 3 threads créeraient de la contention et du gaspillage de RAM.
+        factory.setConcurrency(1); 
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        
         return factory;
     }
 }

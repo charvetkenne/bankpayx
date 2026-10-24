@@ -7,6 +7,7 @@ import com.mansa.api.dto.response.CreatePayPalOrderResponse;
 import com.mansa.application.port.in.CapturePayPalOrderUseCase;
 import com.mansa.application.port.in.CreatePayPalOrderUseCase;
 import com.mansa.domain.model.PayPalOrder;
+import com.mansa.infrastructure.security.JwtUtils;
 import com.mansa.infrastructure.security.filter.CorrelationIdFilter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ public class PayPalPaymentController {
 
     private final CreatePayPalOrderUseCase  createOrderUseCase;
     private final CapturePayPalOrderUseCase captureOrderUseCase;
+    private final JwtUtils jwtUtils; // <-- AJOUT
 
     // ── POST /api/v1/paypal/create-order ──────────────────────────────────────
     @PostMapping("/create-order")
@@ -43,9 +45,16 @@ public class PayPalPaymentController {
         String correlationId = resolveCorrelationId(httpRequest);
         log.info("[{}] POST /api/v1/paypal/create-order merchant={} amount={}",
                 correlationId, request.getMerchantId(), request.getAmount());
+              
+          // 1. Récupérer l'UUID Supabase de l'utilisateur connecté
+        String userId = jwtUtils.getCurrentUserId();
+        if ("anonymous".equals(userId)) {
+            throw new IllegalStateException("Utilisateur non authentifié");
+        }       
 
         PayPalOrder order = createOrderUseCase.execute(
                 new CreatePayPalOrderUseCase.Command(
+                        userId,
                         request.getAmount(), request.getCurrency(),
                         request.getMerchantId(), request.getDescription(),
                         request.getReturnUrl(), request.getCancelUrl(),

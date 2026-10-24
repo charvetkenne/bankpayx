@@ -10,6 +10,7 @@ public interface ProcessCardPaymentUseCase {
      * généré par Stripe.js côté frontend, jamais par le backend.
      */
     record Command(
+            String userId,
             String paymentMethodId,   // pm_xxx — token Stripe.js
             Double amount,
             String currency,

@@ -5,6 +5,7 @@ import com.mansa.domain.model.PayPalOrder;
 public interface CreatePayPalOrderUseCase {
 
     record Command(
+            String userId,
             Double  amount,
             String  currency,
             String  merchantId,

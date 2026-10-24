@@ -21,19 +21,51 @@ import org.springframework.stereotype.Component;
  *
  * Then enable the converter in SecurityConfig.oauth2ResourceServer() block.
  */
-@Slf4j
-@Component
-@RequiredArgsConstructor
-public class JwtAuthenticationConverter
-         implements Converter<Jwt, AbstractAuthenticationToken>  {
 
-    private final KeycloakRoleConverter keycloakRoleConverter;
+
+
+
+
+@Component
+public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+
+    private final SupabaseRoleConverter supabaseRoleConverter; 
+
+    public JwtAuthenticationConverter(SupabaseRoleConverter supabaseRoleConverter){
+        this.supabaseRoleConverter = supabaseRoleConverter;
+    }
+
     @Override
-     public AbstractAuthenticationToken convert(@NonNull  Jwt jwt) {
-        System.out.println("JWT CONVERTER CALLED");
-        Collection<GrantedAuthority> authorities = keycloakRoleConverter.convert(jwt);
-        System.out.println("AUTHORITIES "+ authorities);
+    public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
+        // 1. Extraire les rôles/autorités
+        Collection<GrantedAuthority> authorities = supabaseRoleConverter.convert(jwt);
+        
+        // 2. Créer le token d'authentification. 
+        // Le 3ème argument (jwt.getSubject()) devient le "Principal Name".
+        // C'est lui qui sera retourné par auth.getName() dans JwtUtils !
         return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
     }
-  
 }
+
+
+
+
+
+
+
+// @Slf4j
+// @Component
+// @RequiredArgsConstructor
+// public class JwtAuthenticationConverter
+//          implements Converter<Jwt, AbstractAuthenticationToken>  {
+
+//     private final KeycloakRoleConverter keycloakRoleConverter;
+//     @Override
+//      public AbstractAuthenticationToken convert(@NonNull  Jwt jwt) {
+//         System.out.println("JWT CONVERTER CALLED");
+//         Collection<GrantedAuthority> authorities = keycloakRoleConverter.convert(jwt);
+//         System.out.println("AUTHORITIES "+ authorities);
+//         return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
+//     }
+  
+// }

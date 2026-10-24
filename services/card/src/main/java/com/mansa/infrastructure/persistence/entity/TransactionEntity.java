@@ -10,9 +10,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "transactions", indexes = {
+    @Index(name = "idx_tx_user_id", columnList = "user_id"),
     @Index(name = "idx_tx_gateway_id",     columnList = "gateway_transaction_id"),
     @Index(name = "idx_tx_gateway_pm_id",  columnList = "gateway_payment_method_id"),
     @Index(name = "idx_tx_merchant_id",    columnList = "merchant_id"),
@@ -20,13 +22,17 @@ import java.time.Instant;
     @Index(name = "idx_tx_correlation_id", columnList = "correlation_id")
 })
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class TransactionEntity {
 
     @Id
     @Column(name = "transaction_id", nullable = false, updatable = false)
     private String transactionId;
+
+     @Column(name = "user_id", nullable = false)
+    private UUID userId; // C'est l'UUID renvoyé par jwtUtils.getCurrentUserId()
 
     // ── Données carte (nullables — peuplées depuis la réponse Stripe) ─────────
     @Column(name = "masked_card_number", length = 25)
