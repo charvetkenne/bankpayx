@@ -213,6 +213,22 @@
                     </container>
                 </configuration>
             </plugin>
+             <!-- Ce plugin est CRUCIAL pour créer un JAR exécutable avec le Manifest -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal> <!-- C'est cette ligne qui crée le "Fat Jar" -->
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Indique explicitement ta classe principale (adapte le package si besoin) -->
+                    <mainClass>com.mansa.card.CardServiceApplication</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
