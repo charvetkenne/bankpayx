@@ -34,7 +34,7 @@ class CardPaymentServiceTest {
 
     private ProcessCardPaymentUseCase.Command buildCommand() {
         return new ProcessCardPaymentUseCase.Command(
-                "pm_test_visa", 50.00, "EUR", "merchant_1", "Test", "corr-001");
+          "Xi1a-v" ,  "pm_test_visa", 50.00, "EUR", "merchant_1", "Test", "corr-001");
     }
 
     @Test

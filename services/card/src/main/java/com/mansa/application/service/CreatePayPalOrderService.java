@@ -40,6 +40,7 @@ public class CreatePayPalOrderService implements CreatePayPalOrderUseCase {
 
         try {
             PayPalGatewayPort.OrderResult result = gatewayPort.createOrder(
+                   
                     money.toSmallestUnit(),
                     command.currency().toLowerCase(),
                     command.description(),
