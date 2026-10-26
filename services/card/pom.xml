@@ -226,7 +226,7 @@
                 </executions>
                 <configuration>
                     <!-- Indique explicitement ta classe principale (adapte le package si besoin) -->
-                    <mainClass>com.mansa.card.CardServiceApplication</mainClass>
+                    <mainClass>com.mansa.CardServiceApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
