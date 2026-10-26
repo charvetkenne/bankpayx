@@ -33,6 +33,7 @@ class CreatePayPalOrderServiceTest {
 
     private CreatePayPalOrderUseCase.Command buildCommand() {
         return new CreatePayPalOrderUseCase.Command(
+                "XUII25",
                 25.00, "EUR", "merchant_1", "Commande #42",
                 "http://localhost:3000/success",
                 "http://localhost:3000/cancel",

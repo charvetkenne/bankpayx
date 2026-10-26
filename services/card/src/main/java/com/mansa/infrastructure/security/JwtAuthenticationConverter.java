@@ -13,6 +13,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import com.mansa.infrastructure.security.SupabaseRoleConverter;
+
 /**
  * Converts a JWT token into Spring Security authorities.
  *
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Component;
 
 
 
+@SuppressWarnings("unused")
 @Component
 public class JwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 

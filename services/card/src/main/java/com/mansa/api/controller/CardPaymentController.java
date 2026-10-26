@@ -22,6 +22,7 @@ import com.mansa.application.port.in.CapturePaymentUseCase;
 import com.mansa.application.port.in.GetTransactionUseCase;
 import com.mansa.application.port.in.ProcessCardPaymentUseCase;
 import com.mansa.application.port.in.RefundPaymentUseCase;
+import com.mansa.infrastructure.security.JwtUtils;
 import com.mansa.infrastructure.security.filter.CorrelationIdFilter;
 import com.mansa.domain.model.CardPayment;
 
@@ -37,6 +38,7 @@ public class CardPaymentController {
     private final RefundPaymentUseCase      refundUseCase;
     private final GetTransactionUseCase     getTransactionUseCase;
     private final PaymentApiMapper          mapper;
+    private final JwtUtils jwtUtils;
 
  
 
@@ -47,22 +49,28 @@ public class CardPaymentController {
         description = "Authorizes a card payment via Stripe. Returns the transaction with its status.",
         responses = {
             @ApiResponse(responseCode = "201", description = "Payment processed",
-                content = @Content(schema = @Schema(implementation = PaymentResponse.class))),
+            content = @Content(schema = @Schema(implementation = PaymentResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "422", description = "Payment rejected by gateway")
         }
     )
-    public ResponseEntity< PaymentResponse/*String*/> processPayment(
+    public ResponseEntity< PaymentResponse> processPayment(
              @RequestBody PaymentRequest request,
             HttpServletRequest httpRequest) {
-                
-          System.out.println("CONTROLLER ENTERED");      
+                    
          
         String correlationId = resolveCorrelationId(httpRequest);
-        System.out.println("REQUEST = " + request);
+        
+         // 1. Récupérer l'UUID Supabase de l'utilisateur connecté
+        String userId = jwtUtils.getCurrentUserId();
+        if ("anonymous".equals(userId)) {
+            throw new IllegalStateException("Utilisateur non authentifié");
+        }
+
         log.info("[{}] POST /api/v1/payments – merchant={}", correlationId, request.getMerchantId());
- // Command simplifié — plus de données brutes de carte
+          // Command simplifié — plus de données brutes de carte
         ProcessCardPaymentUseCase.Command command = new ProcessCardPaymentUseCase.Command(
+                userId,
                 request.getPaymentMethodId(),
                 request.getAmount(),
                 request.getCurrency(),
@@ -70,9 +78,9 @@ public class CardPaymentController {
                 request.getDescription(),
                 correlationId
         );
-        System.out.println("BEFORE processUseCase.process()");
+  
         CardPayment result = processUseCase.process(command);
-        System.out.println("AFTER processUseCase.process()");
+      
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toResponse(result));
         // return ResponseEntity.ok("HELLO");
     }
