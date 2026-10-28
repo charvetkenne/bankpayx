@@ -12,7 +12,7 @@ public class KeycloakService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private final String serverUrl = "http://localhost:8080";
+    private final String serverUrl = "http://localhost:8180";
     private final String realm = "bankpayx";
 
     public void createUser(String username, String email, String password) {
@@ -35,3 +35,4 @@ public class KeycloakService {
         restTemplate.postForEntity(url, body, Void.class);
     }
 }
+ 

@@ -1,0 +1,420 @@
+@startuml class-diagram-card-service
+title card-service — Diagramme de classes (architecture hexagonale)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' ============================================================
+' DOMAIN — logique métier pure, zéro dépendance framework
+' ============================================================
+package "domain" #FFF6E8 {
+
+    package "model" {
+        class Money {
+            -amount : BigDecimal
+            -currency : Currency
+            +of(amount, currency) : Money
+            +add(other) : Money
+            +subtract(other) : Money
+            +isGreaterThan(other) : boolean
+            +toSmallestUnit() : long
+        }
+
+        class CardPayment {
+            -transactionId : String
+            -amount : Money
+            -merchantId : String
+            -gatewayPaymentMethodId : String
+            -gatewayTransactionId : String
+            -maskedCardNumber : String
+            -cardType : CardType
+            -status : PaymentStatus
+            -requiresAction : boolean
+            -clientSecret : String
+            -redirectUrl : String
+            -failureReason : String
+            -domainEvents : List<DomainEvent>
+            +initiate(amount, merchantId, description,\ncorrelationId, paymentMethodId) : CardPayment
+            +markAuthorized(gatewayTransactionId)
+            +markRequiresAction(gatewayTxId, clientSecret, redirectUrl)
+            +markCaptured()
+            +markFailed(reason)
+            +markRefunded()
+            +pullDomainEvents() : List<DomainEvent>
+        }
+
+        class PayPalOrder {
+            -transactionId : String
+            -paypalOrderId : String
+            -captureId : String
+            -amount : Money
+            -approveUrl : String
+            -status : PayPalOrderStatus
+            -failureReason : String
+            +initiate(amount, merchantId, description,\nreturnUrl, cancelUrl, correlationId) : PayPalOrder
+            +markCreated(orderId, approveUrl)
+            +markCaptured(captureId)
+            +markFailed(reason)
+            +markCancelled()
+            +pullDomainEvents() : List<DomainEvent>
+        }
+
+        class Card {
+            -cardNumber : String
+            -cardHolder : String
+            -expiryDate : YearMonth
+            -cardType : CardType
+            +create(pan, holder, expiry, cvv) : Card
+            +maskedNumber() : String
+            +isExpired() : boolean
+        }
+    }
+
+    package "enums" {
+        enum PaymentStatus {
+            PENDING
+            AUTHORIZED
+            CAPTURED
+            FAILED
+            REFUNDED
+            CANCELLED
+        }
+        enum PayPalOrderStatus {
+            PENDING_APPROVAL
+            APPROVED
+            CAPTURED
+            FAILED
+            CANCELLED
+        }
+        enum CardType {
+            VISA
+            MASTERCARD
+            AMEX
+            UNKNOWN
+        }
+        enum Currency {
+            EUR
+            USD
+            GBP
+            XOF
+            XAF
+            MAD
+        }
+    }
+
+    package "event" {
+        abstract class DomainEvent {
+            -eventId : String
+            -occurredOn : Instant
+            -correlationId : String
+        }
+        class PaymentAuthorizedEvent
+        class PaymentFailedEvent
+        class PaymentCapturedEvent
+        class RefundCreatedEvent
+        class PayPalOrderCreatedEvent
+        class PayPalOrderCapturedEvent
+
+        DomainEvent <|-- PaymentAuthorizedEvent
+        DomainEvent <|-- PaymentFailedEvent
+        DomainEvent <|-- PaymentCapturedEvent
+        DomainEvent <|-- RefundCreatedEvent
+        DomainEvent <|-- PayPalOrderCreatedEvent
+        DomainEvent <|-- PayPalOrderCapturedEvent
+    }
+
+    package "exception" {
+        abstract class DomainException
+        class InvalidCardException
+        class PaymentNotFoundException
+        DomainException <|-- InvalidCardException
+        DomainException <|-- PaymentNotFoundException
+    }
+
+    CardPayment "1" *-- "1" Money
+    CardPayment "1" *-- "*" DomainEvent
+    CardPayment "1" -- "1" PaymentStatus
+    CardPayment "1" -- "1" CardType
+    PayPalOrder "1" *-- "1" Money
+    PayPalOrder "1" -- "1" PayPalOrderStatus
+    Card "1" -- "1" CardType
+}
+
+' ============================================================
+' APPLICATION — orchestration des use cases
+' ============================================================
+package "application" #EAF7EE {
+
+    package "port.in" {
+        interface ProcessCardPaymentUseCase {
+            +process(Command) : CardPayment
+        }
+        interface CapturePaymentUseCase {
+            +capture(transactionId) : CardPayment
+        }
+        interface RefundPaymentUseCase {
+            +refund(transactionId) : CardPayment
+        }
+        interface GetTransactionUseCase {
+            +getByTransactionId(id) : CardPayment
+        }
+        interface CreatePayPalOrderUseCase {
+            +execute(Command) : PayPalOrder
+        }
+        interface CapturePayPalOrderUseCase {
+            +execute(Command) : PayPalOrder
+        }
+        interface GetCardTransactionHistoryUseCase {
+            +getHistory(Filter, Pageable) : Page<CardPayment>
+        }
+    }
+
+    package "port.out" {
+        interface PaymentGatewayPort {
+            +authorize(CardPayment) : String
+            +capture(gatewayTransactionId)
+            +refund(gatewayTransactionId)
+        }
+        interface TransactionPersistencePort {
+            +save(CardPayment) : CardPayment
+            +findByTransactionId(id) : Optional<CardPayment>
+            +findByFilters(...) : Page<CardPayment>
+        }
+        interface EventPublisherPort {
+            +publish(DomainEvent)
+            +publishAll(List<DomainEvent>)
+        }
+        interface PayPalGatewayPort {
+            +createOrder(...) : OrderResult
+            +captureOrder(orderId) : String
+        }
+        interface PayPalOrderPersistencePort {
+            +save(PayPalOrder) : PayPalOrder
+            +findByPaypalOrderId(id) : Optional<PayPalOrder>
+        }
+    }
+
+    package "service" {
+        class CardPaymentService {
+            -gatewayPort : PaymentGatewayPort
+            -persistencePort : TransactionPersistencePort
+            -eventPublisherPort : EventPublisherPort
+            +process(Command) : CardPayment
+        }
+        class CapturePaymentService
+        class RefundPaymentService
+        class GetTransactionService
+        class CreatePayPalOrderService {
+            -gatewayPort : PayPalGatewayPort
+            -persistencePort : PayPalOrderPersistencePort
+            +execute(Command) : PayPalOrder
+        }
+        class CapturePayPalOrderService
+        class GetCardTransactionHistoryService
+    }
+
+    ProcessCardPaymentUseCase  <|.. CardPaymentService
+    CapturePaymentUseCase      <|.. CapturePaymentService
+    RefundPaymentUseCase       <|.. RefundPaymentService
+    GetTransactionUseCase      <|.. GetTransactionService
+    CreatePayPalOrderUseCase   <|.. CreatePayPalOrderService
+    CapturePayPalOrderUseCase  <|.. CapturePayPalOrderService
+
+    CardPaymentService      --> PaymentGatewayPort
+    CardPaymentService      --> TransactionPersistencePort
+    CardPaymentService      --> EventPublisherPort
+    CapturePaymentService   --> PaymentGatewayPort
+    CapturePaymentService   --> TransactionPersistencePort
+    CreatePayPalOrderService --> PayPalGatewayPort
+    CreatePayPalOrderService --> PayPalOrderPersistencePort
+}
+
+' ============================================================
+' INFRASTRUCTURE — adapters techniques
+' ============================================================
+package "infrastructure" #F2F6FF {
+
+    package "stripe" {
+        class StripeAdapter {
+            -paymentProcessor : StripePaymentProcessor
+            -stripeClient : StripeClient
+            -stripeMapper : StripeMapper
+            +authorize(CardPayment) : String
+            +capture(gatewayTransactionId)
+            +refund(gatewayTransactionId)
+        }
+        class StripePaymentProcessor {
+            -stripeClient : StripeClient
+            -stripeConfig : StripeConfig
+            +authorizeWithRetryFull(request, maxRetries) : StripePaymentResponse
+            +confirm3ds(paymentIntentId, returnUrl)
+        }
+        class StripeClient {
+            -stripeConfig : StripeConfig
+            +createPaymentIntent(request) : StripePaymentResponse
+            +capturePaymentIntent(id)
+            +refundPaymentIntent(id)
+        }
+        class StripeConfig {
+            -secretKey : String
+            -webhookSecret : String
+            -returnUrl : String
+            +requestOptionsFor(idempotencyKey) : RequestOptions
+        }
+        class StripeMapper {
+            +toStripeRequest(CardPayment) : StripePaymentRequest
+        }
+        class StripeWebhookController {
+            +handleWebhook(payload, sigHeader) : ResponseEntity
+        }
+        class StripePaymentRequest
+        class StripePaymentResponse
+
+        PaymentGatewayPort  <|.. StripeAdapter
+        StripeAdapter       --> StripePaymentProcessor
+        StripeAdapter       --> StripeClient
+        StripeAdapter       --> StripeMapper
+        StripePaymentProcessor --> StripeClient
+        StripePaymentProcessor --> StripeConfig
+        StripeClient        --> StripeConfig
+        StripeMapper        ..> StripePaymentRequest
+        StripeClient         ..> StripePaymentResponse
+    }
+
+    package "paypal" {
+        class PayPalGatewayAdapter {
+            -httpClient : PayPalHttpClient
+            +createOrder(...) : OrderResult
+            +captureOrder(orderId) : String
+        }
+        class PayPalHttpClient {
+            -paypalConfig : PayPalConfig
+            -oAuth2Client : PayPalOAuth2Client
+            +createOrder(...) : PayPalOrderResponse
+            +captureOrder(orderId) : PayPalCaptureResponse
+        }
+        class PayPalOAuth2Client {
+            -cachedToken : String
+            +getAccessToken() : String
+        }
+        class PayPalConfig
+        class PayPalWebhookController
+
+        PayPalGatewayPort  <|.. PayPalGatewayAdapter
+        PayPalGatewayAdapter --> PayPalHttpClient
+        PayPalHttpClient    --> PayPalOAuth2Client
+        PayPalHttpClient    --> PayPalConfig
+    }
+
+    package "persistence" {
+        class TransactionEntity {
+            -transactionId : String
+            -maskedCardNumber : String
+            -gatewayPaymentMethodId : String
+            -status : PaymentStatus
+        }
+        class TransactionJpaRepository {
+            +findByGatewayTransactionId(id)
+            +findByFilters(...)
+        }
+        class TransactionMapper {
+            +toEntity(CardPayment) : TransactionEntity
+            +toDomain(TransactionEntity) : CardPayment
+        }
+        class TransactionPersistenceAdapter {
+            -repository : TransactionJpaRepository
+            -mapper : TransactionMapper
+        }
+        class PayPalOrderEntity
+        class PayPalOrderJpaRepository
+        class PayPalOrderPersistenceAdapter
+
+        TransactionPersistencePort <|.. TransactionPersistenceAdapter
+        TransactionPersistenceAdapter --> TransactionJpaRepository
+        TransactionPersistenceAdapter --> TransactionMapper
+        TransactionMapper ..> TransactionEntity
+
+        PayPalOrderPersistencePort <|.. PayPalOrderPersistenceAdapter
+        PayPalOrderPersistenceAdapter --> PayPalOrderJpaRepository
+    }
+
+    package "kafka" {
+        class KafkaProducerAdapter {
+            -kafkaTemplate : KafkaTemplate
+            -mapper : KafkaEventMapper
+            +publish(DomainEvent)
+        }
+        class KafkaEventMapper {
+            +toKafka(PaymentAuthorizedEvent) : PaymentAuthorizedKafkaEvent
+            +toKafka(PayPalOrderCapturedEvent) : PayPalOrderCapturedKafkaEvent
+        }
+        class PaymentEventConsumer
+
+        EventPublisherPort <|.. KafkaProducerAdapter
+        KafkaProducerAdapter --> KafkaEventMapper
+    }
+
+    package "security" {
+        class SecurityConfig
+        class KeycloakRoleConverter
+        class CorrelationIdFilter
+        class CustomAuthenticationEntryPoint
+    }
+}
+
+' ============================================================
+' API — couche REST
+' ============================================================
+package "api" #FDEFF2 {
+
+    package "controller" {
+        class CardPaymentController {
+            -processUseCase : ProcessCardPaymentUseCase
+            -captureUseCase : CapturePaymentUseCase
+            -mapper : PaymentApiMapper
+            +processPayment(PaymentRequest) : ResponseEntity
+        }
+        class PayPalPaymentController {
+            -createOrderUseCase : CreatePayPalOrderUseCase
+            -captureOrderUseCase : CapturePayPalOrderUseCase
+            +createOrder(...) : ResponseEntity
+            +captureOrder(...) : ResponseEntity
+        }
+        class TransactionHistoryController {
+            -cardHistoryUseCase : GetCardTransactionHistoryUseCase
+            -paypalHistoryUseCase : GetPayPalOrderHistoryUseCase
+            +getUnifiedHistory(...) : ResponseEntity
+        }
+    }
+
+    package "dto" {
+        class PaymentRequest
+        class PaymentResponse
+        class CreatePayPalOrderRequest
+        class CreatePayPalOrderResponse
+    }
+
+    package "mapper" {
+        class PaymentApiMapper {
+            +toResponse(CardPayment) : PaymentResponse
+        }
+    }
+
+    package "exception" {
+        class GlobalExceptionHandler
+    }
+
+    CardPaymentController --> ProcessCardPaymentUseCase
+    CardPaymentController --> CapturePaymentUseCase
+    CardPaymentController --> PaymentApiMapper
+    CardPaymentController ..> PaymentRequest
+    CardPaymentController ..> PaymentResponse
+
+    PayPalPaymentController --> CreatePayPalOrderUseCase
+    PayPalPaymentController --> CapturePayPalOrderUseCase
+
+    TransactionHistoryController --> GetCardTransactionHistoryUseCase
+}
+
+@enduml

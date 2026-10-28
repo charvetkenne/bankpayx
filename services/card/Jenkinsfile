@@ -1,0 +1,267 @@
+// ============================================================
+// card-service — Pipeline Jenkins Déclaratif
+// Étapes : Checkout → Build → Tests → Docker → Deploy
+// ============================================================
+
+pipeline {
+
+    agent any
+
+    // ── Variables globales ─────────────────────────────────────────────────
+    environment {
+        SERVICE_NAME    = 'card-service'
+        DOCKER_REGISTRY = 'your-registry.example.com'        // ex: ECR, DockerHub
+        DOCKER_IMAGE    = "${DOCKER_REGISTRY}/${SERVICE_NAME}"
+        DOCKER_TAG      = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+
+        // Credentials Jenkins (configurés dans Manage Jenkins → Credentials)
+        DOCKER_CREDENTIALS   = credentials('docker-registry-credentials')
+        STRIPE_SECRET_KEY    = credentials('stripe-secret-key-sandbox')
+        PAYPAL_CLIENT_ID     = credentials('paypal-client-id-sandbox')
+        PAYPAL_CLIENT_SECRET = credentials('paypal-client-secret-sandbox')
+    }
+
+    // ── Options du pipeline ────────────────────────────────────────────────
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    // ── Déclencheurs ───────────────────────────────────────────────────────
+    triggers {
+        pollSCM('H/5 * * * *')   // vérifie le SCM toutes les 5 minutes
+    }
+
+    stages {
+
+        // ── 1. Checkout ────────────────────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                echo "Cloning branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
+        // ── 2. Build Maven ─────────────────────────────────────────────────
+        stage('Build') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-21-alpine'
+                    args  '-v $HOME/.m2:/root/.m2'   // cache Maven local
+                }
+            }
+            steps {
+                echo 'Building application...'
+                sh 'mvn clean compile -q'
+            }
+        }
+
+        // ── 3. Tests unitaires ─────────────────────────────────────────────
+        stage('Unit Tests') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-21-alpine'
+                    args  '-v $HOME/.m2:/root/.m2'
+                }
+            }
+            steps {
+                echo 'Running unit tests...'
+                sh '''
+                    mvn test \
+                        -Dtest="*Test" \
+                        -Dsurefire.failIfNoSpecifiedTests=false \
+                        -q
+                '''
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                    publishHTML(target: [
+                        reportDir:   'target/site/jacoco',
+                        reportFiles: 'index.html',
+                        reportName:  'Coverage Report'
+                    ])
+                }
+                failure {
+                    echo 'Unit tests FAILED — notifying team'
+                    // slackSend channel: '#bankpayx-ci', message: "❌ Unit tests failed: ${env.BUILD_URL}"
+                }
+            }
+        }
+
+        // ── 4. Tests d'intégration ─────────────────────────────────────────
+        stage('Integration Tests') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-21-alpine'
+                    args  '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+            steps {
+                echo 'Running integration tests (Testcontainers)...'
+                sh '''
+                    mvn test \
+                        -Dtest="*IT" \
+                        -Dsurefire.failIfNoSpecifiedTests=false \
+                        -Dspring.profiles.active=test \
+                        -q
+                '''
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        // ── 5. Analyse de code (SonarQube optionnel) ──────────────────────
+        stage('Code Analysis') {
+            when {
+                branch 'main'   // seulement sur la branche principale
+            }
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-21-alpine'
+                    args  '-v $HOME/.m2:/root/.m2'
+                }
+            }
+            steps {
+                echo 'Running SonarQube analysis...'
+                withSonarQubeEnv('sonarqube') {
+                    sh 'mvn sonar:sonar -q'
+                }
+            }
+        }
+
+        // ── 6. Package JAR ─────────────────────────────────────────────────
+        stage('Package') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-21-alpine'
+                    args  '-v $HOME/.m2:/root/.m2'
+                }
+            }
+            steps {
+                echo 'Packaging application...'
+                sh 'mvn package -DskipTests -q'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+
+        // ── 7. Build image Docker ──────────────────────────────────────────
+        stage('Docker Build') {
+            steps {
+                echo "Building Docker image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                sh """
+                    docker build \
+                        -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                        -t ${DOCKER_IMAGE}:latest \
+                        .
+                """
+            }
+        }
+
+        // ── 8. Push image Docker ───────────────────────────────────────────
+        stage('Docker Push') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
+            steps {
+                echo "Pushing Docker image to registry..."
+                sh """
+                    echo ${DOCKER_CREDENTIALS_PSW} | docker login \
+                        -u ${DOCKER_CREDENTIALS_USR} \
+                        --password-stdin ${DOCKER_REGISTRY}
+                    docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    docker push ${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+
+        // ── 9. Déploiement en staging ──────────────────────────────────────
+        stage('Deploy Staging') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                echo 'Deploying to STAGING...'
+                sh """
+                    docker-compose -f docker-compose.yml \
+                        -p bankpayx-staging \
+                        up -d --no-deps card-service
+                """
+                // Attendre que le service soit healthy
+                sh '''
+                    for i in $(seq 1 12); do
+                        STATUS=$(docker inspect --format="{{.State.Health.Status}}" bankpayx-card-service 2>/dev/null || echo "unknown")
+                        echo "Health check $i/12 : $STATUS"
+                        [ "$STATUS" = "healthy" ] && exit 0
+                        sleep 10
+                    done
+                    echo "Service did not become healthy in time"
+                    exit 1
+                '''
+            }
+            post {
+                success {
+                    echo 'Staging deployment successful!'
+                    // slackSend channel: '#bankpayx-ci', message: "✅ Staging deployed: ${env.BUILD_URL}"
+                }
+            }
+        }
+
+        // ── 10. Déploiement en production ─────────────────────────────────
+        stage('Deploy Production') {
+            when {
+                branch 'main'
+            }
+            input {
+                message 'Deploy to PRODUCTION?'
+                ok      'Deploy'
+                submitter 'admin,devops-team'
+            }
+            steps {
+                echo 'Deploying to PRODUCTION...'
+                sh """
+                    docker-compose -f docker-compose.yml \
+                        -p bankpayx-prod \
+                        up -d --no-deps card-service
+                """
+            }
+            post {
+                success {
+                    echo 'Production deployment successful!'
+                    // slackSend channel: '#bankpayx-prod', message: "🚀 Production deployed: ${env.BUILD_URL}"
+                }
+                failure {
+                    echo 'Production deployment FAILED — rolling back!'
+                    sh """
+                        docker-compose -f docker-compose.yml \
+                            -p bankpayx-prod \
+                            up -d --no-deps \
+                            --rollback card-service
+                    """
+                }
+            }
+        }
+    }
+
+    // ── Actions globales post-pipeline ─────────────────────────────────────
+    post {
+        always {
+            echo "Pipeline terminé — nettoyage des images Docker locales"
+            sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            cleanWs()
+        }
+        success {
+            echo "✅ Pipeline SUCCESS — branch: ${env.BRANCH_NAME} build: ${env.BUILD_NUMBER}"
+        }
+        failure {
+            echo "❌ Pipeline FAILED — branch: ${env.BRANCH_NAME} build: ${env.BUILD_NUMBER}"
+        }
+    }
+}

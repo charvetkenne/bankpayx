@@ -1,0 +1,136 @@
+spring:
+  application:
+    name: card-service
+
+  # ── Database ───────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 2
+      connection-timeout: 40000
+      idle-timeout: 600000
+  flyway:
+    baseline-on-migrate: false
+    schemas: public
+    default_schema: public
+    locations: classpath:db/migration
+
+  jpa:
+    hibernate:
+      ddl-auto: none        # Use Flyway / Liquibase in production
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true 
+        default_schema: public
+
+  # ── Kafka ──────────────────────────────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      # Spring résoudra automatiquement les variables ${...} à l'intérieur de cette chaîne
+      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: card-service-group
+      auto-offset-reset: earliest
+      topics:
+        payment-events: transaction.payment.events
+        payment-failed: transaction.payment.failed
+        paypal-events:   card.paypal.events       
+    listener:
+      auto-startup: false
+   
+
+        
+  # ── Security (JWT / Keycloak) ───────────────────────────────────────────────
+  # Uncomment after adding spring-boot-starter-oauth2-resource-server:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SUPABASE_ISSUER_URI}
+          jwk-set-uri: ${SUPABASE_JWKS_URI}
+          # jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:bankpayx}/protocol/openid-connect/certs
+
+# ── Eureka ─────────────────────────────────────────────────────────────────────
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka/
+#     fetch-registry: true|false
+#     register-with-eureka: true|false
+#   instance:
+#     prefer-ip-address: true|false
+#     instance-id: ${spring.application.name}:${server.port}
+
+# ── Server ─────────────────────────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8082}
+  servlet:
+    context-path: /
+
+# ── Stripe ─────────────────────────────────────────────────────────────────────
+stripe:
+  secret-key: ${STRIPE_SECERT_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY}
+  # currency: eur
+  sandbox: true
+  return-url: ${STRIPE_RETURN_URL}
+
+# ── External Clients ───────────────────────────────────────────────────────────
+# clients:
+#   fraud-detection:
+#     url: ${FRAUD_SERVICE_URL:http://fraud-service}
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID}               
+  client-secret: ${PAYPAL_CLIENT_SECRET}
+  base-url: https://api-m.sandbox.paypal.com
+  brand-name: BankPayX
+  webhook-id: ${PAYPAL_WEBHOOK_ID}
+ 
+# ── Actuator ───────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  info:
+    env:
+      enabled: true
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.mansa.card: INFO
+    org.springframework.security: TRACE
+    org.hibernate.SQL: WARN
+    org.apache.kafka: OFF
+    org.springframework.kafka: OFF
+    org.springframework.ecurity.oauth2: TRACE
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"
+
+# ── OpenAPI ────────────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    # path: /v3/api-docs
+    enabled: false
+  swagger-ui:
+    # path: /swagger-ui.html
+    enabled: false
+    operationsSorter: method

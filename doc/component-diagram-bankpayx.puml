@@ -1,0 +1,96 @@
+@startuml component-diagram-bankpayx
+title bankpayx — Diagramme de composants (card-service et son écosystème)
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+actor "Utilisateur" as User
+
+package "Frontend — React / Vite" #F2F6FF {
+    [SPA React\n(PaymentForm, CardPaymentPage,\nPayPalPaymentPage, SuccessPage)] as Frontend
+    [Stripe.js\n(@stripe/react-stripe-js)] as StripeJS
+    [Keycloak JS Adapter\n(keycloak-js, PKCE)] as KeycloakJS
+    [Axios client\n(intercepteur JWT)] as AxiosClient
+
+    Frontend --> StripeJS : tokenise la carte\ncréePaymentMethod()
+    Frontend --> KeycloakJS : login / refresh token
+    Frontend --> AxiosClient : appels REST
+}
+
+package "card-service — Spring Boot 3.5" #FFF6E8 {
+
+    component "API Layer\n(Controllers REST)" as API
+    component "Application Layer\n(Use Cases / Services)" as APP
+    component "Domain\n(CardPayment, PayPalOrder, Money)" as DOMAIN
+    component "Infrastructure — Stripe\n(StripeAdapter, StripeClient,\nStripePaymentProcessor)" as INFRA_STRIPE
+    component "Infrastructure — PayPal\n(PayPalGatewayAdapter,\nPayPalHttpClient, OAuth2Client)" as INFRA_PAYPAL
+    component "Infrastructure — Persistence\n(JPA Repositories, Mappers)" as INFRA_DB
+    component "Infrastructure — Kafka\n(Producer / Consumer Adapters)" as INFRA_KAFKA
+    component "Infrastructure — Security\n(SecurityConfig, JWT validation,\nCorrelationIdFilter)" as INFRA_SEC
+
+    API --> APP
+    APP --> DOMAIN
+    APP --> INFRA_STRIPE : PaymentGatewayPort
+    APP --> INFRA_PAYPAL : PayPalGatewayPort
+    APP --> INFRA_DB      : TransactionPersistencePort
+    APP --> INFRA_KAFKA   : EventPublisherPort
+    INFRA_SEC ..> API : filtre toutes les requêtes
+}
+
+database "PostgreSQL\n(transactions, paypal_orders,\nflyway_schema_history)" as Postgres
+
+queue "Kafka\n(card.payment.events,\ncard.paypal.events)" as Kafka
+
+cloud "Stripe API\n(api.stripe.com)" as StripeAPI
+cloud "PayPal Sandbox API\n(api-m.sandbox.paypal.com)" as PayPalAPI
+
+node "Keycloak\n(OAuth2 / OIDC Provider,\nrealm bankpayx)" as Keycloak
+
+package "Autres microservices bankpayx" #EAF7EE {
+    [transaction-service] as TxService
+    [notification-service] as NotifService
+    [fraud-service] as FraudService
+}
+
+' ── Flux Frontend ↔ Backend ────────────────────────────────────────────────
+User --> Frontend
+AxiosClient --> API : HTTPS REST\nBearer JWT (Authorization header)
+KeycloakJS --> Keycloak : OAuth2 PKCE\n(login, token refresh)
+
+' ── Backend ↔ Keycloak ──────────────────────────────────────────────────────
+INFRA_SEC --> Keycloak : validation JWT\n(JWK Set endpoint)
+
+' ── Backend ↔ Stripe ────────────────────────────────────────────────────────
+INFRA_STRIPE --> StripeAPI : HTTPS REST\n(Stripe Java SDK)
+StripeAPI --> API : Webhook\nPOST /webhooks/stripe
+
+' ── Backend ↔ PayPal ─────────────────────────────────────────────────────────
+INFRA_PAYPAL --> PayPalAPI : HTTPS REST\nOAuth2 client_credentials
+PayPalAPI --> API : Webhook\nPOST /webhooks/paypal
+
+' ── Backend ↔ Persistence ───────────────────────────────────────────────────
+INFRA_DB --> Postgres : JDBC
+
+' ── Backend ↔ Kafka ──────────────────────────────────────────────────────────
+INFRA_KAFKA --> Kafka : produce\n(card.payment.events,\ncard.paypal.events)
+Kafka --> INFRA_KAFKA : consume\n(transaction.payment.events)
+
+' ── Kafka ↔ autres microservices ────────────────────────────────────────────
+Kafka --> TxService : consume événements paiement
+Kafka --> NotifService : consume pour notifications
+INFRA_PAYPAL ..> FraudService : (optionnel) appel risk score
+
+note bottom of StripeAPI
+    Le webhook Stripe reste la source de
+    vérité finale pour les paiements avec
+    redirection (3DS, Bancontact, iDEAL…).
+end note
+
+note bottom of Kafka
+    Architecture event-driven :
+    card-service publie les événements
+    métier sans connaître ses consommateurs.
+end note
+
+@enduml

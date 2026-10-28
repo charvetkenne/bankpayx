@@ -15,6 +15,15 @@
   <name>mobilemoney</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
+
+   <properties>
+        <!-- Ajuste cette version pour qu'elle corresponde EXACTEMENT à la version
+             de Lombok héritée du pom parent / de spring-boot-dependencies.
+             Vérifie avec : mvn dependency:tree -Dincludes=org.projectlombok -->
+        <lombok.version>1.18.34</lombok.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
+  </properties>
+
   <dependencies>
 
         <!-- Spring Core -->
@@ -48,16 +57,56 @@
             <scope>provided</scope>
         </dependency>
 
+  
+        <!--gestion securite interne-->
+         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+         </dependency>
+         <!-- <dependency>
+             <groupId>org.springframework.security</groupId>
+             <artifactId>spring-security-crypto</artifactId>
+        </dependency> -->
+         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- Actuator (monitoring) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- resilience  -->
+          <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-reactor</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
+        <!-- Maven -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>2.2.0</version> 
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+
         <!-- Spring Cloud – Eureka client (si nécessaire) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
+         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- OpenAPI / Swagger -->
@@ -66,6 +115,19 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.6.0</version>
         </dependency>
+
+        <dependency>
+         <groupId>io.swagger.core.v3</groupId>
+         <artifactId>swagger-annotations</artifactId>
+         <version>2.2.7</version>
+       </dependency>
+
+      <dependency>
+        <groupId>org.javamoney</groupId>
+        <artifactId>moneta</artifactId>
+        <version>1.4.2</version>
+        <type>pom</type>
+     </dependency>
 
         <!-- Tests -->
         <dependency>
@@ -90,6 +152,24 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>1.6.3</version> <!-- Use the latest stable version -->
+        </dependency>
+
+         <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>1.6.3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>net.logstash.logback</groupId>
+          <artifactId>logstash-logback-encoder</artifactId>
+          <version>7.4</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
@@ -97,7 +177,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-dependencies</artifactId>
-            <version>2022.0.5</version> <!-- Compatible Spring Boot 3.1.x -->
+            <version>2023.0.3</version> <!-- Compatible Spring Boot 3.1.x -->
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -107,7 +187,31 @@
     <!-- Build (hérite des plugins du parent) -->
     <build>
         <plugins>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                        <!-- Requis dès qu'un mapper prend en paramètre/retourne
+                             une classe annotée Lombok (@Builder, @Getter, etc.) -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <!-- Plugin Docker (JIB) -->
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
@@ -123,6 +227,7 @@
                         </jvmFlags>
                     </container>
                 </configuration>
+    
             </plugin>
 
         </plugins>

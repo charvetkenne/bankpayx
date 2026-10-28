@@ -1,0 +1,139 @@
+# ============================================================
+# card-service — Orchestration complète
+# Services : card-service, PostgreSQL, Kafka, Zookeeper
+# ============================================================
+
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: bankpayx-postgres
+    environment:
+      POSTGRES_DB:       carddb
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bankpayx-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d carddb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Zookeeper (requis par Kafka) ──────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: bankpayx-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME:   2000
+    networks:
+      - bankpayx-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Kafka ──────────────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: bankpayx-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID:                        1
+      KAFKA_ZOOKEEPER_CONNECT:                zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS:             PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:   PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:       PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE:        'true'
+    ports:
+      - "29092:29092"   # accessible depuis l'hôte
+    networks:
+      - bankpayx-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ── Kafka UI (optionnel — visualisation des topics) ───────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: bankpayx-kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME:            bankpayx
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8090:8080"
+    networks:
+      - bankpayx-network
+
+  # ── card-service ──────────────────────────────────────────────────────────
+  card-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bankpayx-card-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      # Base de données
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_NAME:     carddb
+      DB_USER:     postgres
+      DB_PASSWORD: postgres
+
+      # Kafka
+      KAFKA_BOOTSTRAP: kafka:9092
+
+      # Stripe (injecter via .env ou secrets en production)
+      STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+
+      # PayPal
+      PAYPAL_CLIENT_ID:     ${PAYPAL_CLIENT_ID:-your_sandbox_client_id}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-your_sandbox_secret}
+
+      # Spring
+      SERVER_PORT:              8082
+      SPRING_PROFILES_ACTIVE:   prod
+
+    ports:
+      - "8082:8082"
+    networks:
+      - bankpayx-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+
+# ── Volumes ────────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+
+# ── Network ───────────────────────────────────────────────────────────────────
+networks:
+  bankpayx-network:
+    driver: bridge
+    name: bankpayx-network
