@@ -14,7 +14,7 @@ spring:
       connection-timeout: 40000
       idle-timeout: 600000
   flyway:
-    baseline-on-migrate: false
+    baseline-on-migrate: true
     schemas: public
     default_schema: public
     locations: classpath:db/migration
