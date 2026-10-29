@@ -14,12 +14,12 @@ import java.util.List;
 public class OutboxPublisher {
 
     private final OutboxEventRepository repository;
-    private final KafkaTemplate<String,String> kafkaTemplate;
+    private final KafkaTemplate<String,Object> kafkaTemplate;
 
     private final int batchSize = 20;
     private final int maxAttempts = 5;
 
-    public OutboxPublisher(OutboxEventRepository repository, KafkaTemplate<String, String> kafkaTemplate) {
+    public OutboxPublisher(OutboxEventRepository repository, KafkaTemplate<String, Object> kafkaTemplate) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;
     }
