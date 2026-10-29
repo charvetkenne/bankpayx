@@ -49,6 +49,9 @@ spring:
         paypal-events:   card.paypal.events       
     listener:
       auto-startup: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration    
    
 
         
