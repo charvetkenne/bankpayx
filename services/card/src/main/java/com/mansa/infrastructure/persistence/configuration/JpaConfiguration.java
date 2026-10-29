@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableJpaAuditing
 @EnableTransactionManagement
 //@EnableJpaRepositories(basePackages = "com.mansa.infrastructure.persistence.repository")
-@EnableJpaRepositories(basePackages = "com.mansa.infrastructure")   // couvre Stripe ET PayPal
-@EntityScan(basePackages             = "com.mansa.infrastructure")   // couvre TransactionEntity ET PayPalOrderEntity
+@EnableJpaRepositories(basePackages = "com.mansa")   // couvre Stripe ET PayPal
+@EntityScan(basePackages             = "com.mansa")   // couvre TransactionEntity ET PayPalOrderEntity
 public class JpaConfiguration {
 }
