@@ -12,16 +12,31 @@ export const injectFonts = () => {
 /**
  * NOTE : fichier reconstruit d'après l'usage des classes dans le code
  * (bpx-input, bpx-label, bpx-btn-gold, bpx-btn-ghost, bpx-card, slide-up, pulse).
- * Si l'historique git contient les styles d'origine, comparez-les avec ceux-ci.
+ * Si l'historique git contient les styles d'origine, comparez-les avec ceux-ci
+ * et gardez seulement les blocs marqués « NOUVEAU » dans vos styles d'origine.
  */
 const globalStyle = `
+  /* NOUVEAU : supprime le liseré blanc autour de la page
+     (marge par défaut du body + fond blanc du navigateur) */
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: ${theme.bg};
+  }
+
   .bpx-root * { box-sizing: border-box; margin: 0; padding: 0; }
   .bpx-root {
     font-family: 'Sora', system-ui, sans-serif;
     background: ${theme.bg};
     min-height: 100vh;
     color: ${theme.text};
+    /* NOUVEAU : colonne Navbar / contenu / footer, pour que le footer
+       reste en bas de l'écran quand la page est courte */
+    display: flex;
+    flex-direction: column;
   }
+  /* NOUVEAU : le contenu des pages occupe l'espace restant */
+  .bpx-main { flex: 1 0 auto; }
 
   /* Les boutons et champs n'héritent pas de la police par défaut du navigateur */
   .bpx-root button,
@@ -130,6 +145,62 @@ const globalStyle = `
     border: 1px solid ${theme.border};
     border-radius: 14px;
     padding: 28px;
+  }
+
+  /* ---------- NOUVEAU : Footer ---------- */
+  .bpx-footer {
+    background: ${theme.surface};
+    border-top: 1px solid ${theme.border};
+    padding: 28px 32px;
+    margin-top: 48px;
+  }
+  .bpx-footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 28px 56px;
+  }
+  .bpx-footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 160px;
+  }
+  .bpx-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+    color: ${theme.text};
+  }
+  .bpx-footer-title {
+    color: ${theme.textMuted};
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .bpx-footer-text {
+    color: ${theme.textMuted};
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .bpx-footer a {
+    color: ${theme.textMuted};
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .bpx-footer a:hover { color: ${theme.gold}; }
+
+  @media (max-width: 600px) {
+    .bpx-footer { padding: 24px 20px; }
+    .bpx-footer-inner { flex-direction: column; gap: 24px; }
   }
 
   /* ---------- Animations ---------- */
