@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import ProtectedRoute from "../components/ProtectedRoute";
 import HomePage from "../pages/HomePage";
 import PaymentPage from "../pages/PaymentPage";
@@ -18,9 +19,10 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/payments" element={<PaymentPage />} />
+    <main className="bpx-main">
+       <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/payments" element={<PaymentPage />} />
 
         {/* /login est la route utilisée par ProtectedRoute, AuthProvider et l'intercepteur Axios.
             /loging est conservée pour les anciens liens (ex. Navbar) */}
@@ -66,6 +68,9 @@ export default function AppRouter() {
           }
         />
       </Routes>
+     </main> 
+
+     <footer/>
     </BrowserRouter>
   );
 }
