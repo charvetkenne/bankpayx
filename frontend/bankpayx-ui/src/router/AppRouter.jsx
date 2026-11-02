@@ -70,7 +70,7 @@ export default function AppRouter() {
       </Routes>
      </main> 
 
-     <footer/>
+     <Footer/>
     </BrowserRouter>
   );
 }
