@@ -20,8 +20,10 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await supabase.auth.signOut();
-      window.location.href = '/login';
+       console.warn(" Requête rejetée (401). Le token est peut-être invalide ou le backend a un souci de config JWT.");
+      console.warn("Détails:", error.response.data);
+      // await supabase.auth.signOut();
+      // window.location.href = '/login';
     }
     return Promise.reject(error);
   }
