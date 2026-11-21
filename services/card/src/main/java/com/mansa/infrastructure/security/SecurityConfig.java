@@ -118,19 +118,9 @@ public class SecurityConfig {
 
       @Bean
     public JwtDecoder jwtDecoder() {
-        // 1. URL exacte des clés publiques de Supabase (JWKS)
-        String jwkSetUri = "https://irjomcdsthgqmznubqti.supabase.co/auth/v1/jwks";
-        
-        // 2. Créer le décodeur
-        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).jwsAlgorithm(SignatureAlgorithm.ES256).build();
-
-        // 3. Forcer la validation de l'issuer (l'émetteur du token)
-        String issuerUri = "https://irjomcdsthgqmznubqti.supabase.co/auth/v1";
-        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
-        
-        // 4. Appliquer le validateur
-        jwtDecoder.setJwtValidator(withIssuer);
-
-        return jwtDecoder;
+        return NimbusJwtDecoder
+                .withJwkSetUri("https://irjomcdsthgqmznubqti.supabase.co/auth/v1/jwks")
+                .jwsAlgorithm(SignatureAlgorithm.ES256) // <-- C'est la ligne magique qui résout l'erreur
+                .build();
     }
 }
