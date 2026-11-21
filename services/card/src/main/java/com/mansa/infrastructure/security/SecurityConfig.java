@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 //import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -119,11 +120,23 @@ public class SecurityConfig {
     }
    
 
-      @Bean
-    public JwtDecoder jwtDecoder() {
+     @Bean
+    public JwtDecoder jwtDecoder(@Value("${supabase.anon-key}") String anonKey) {
+        // 1. Créer un RestTemplate personnalisé
+        RestTemplate restTemplate = new RestTemplate();
+        
+        // 2. Ajouter un intercepteur pour injecter l'en-tête 'apikey' requis par Supabase
+        restTemplate.getInterceptors().add((request, body, execution) -> {
+            request.getHeaders().add("apikey", anonKey);
+            request.getHeaders().add("User-Agent", "Spring-Boot-Supabase-JWT"); // Évite les blocages WAF
+            return execution.execute(request, body);
+        });
+
+        // 3. Configurer le décodeur avec ce RestTemplate et l'algorithme ES256
         return NimbusJwtDecoder
                 .withJwkSetUri("https://irjomcdsthgqmznubqti.supabase.co/auth/v1/jwks")
-                .jwsAlgorithm(SignatureAlgorithm.ES256) // <-- C'est la ligne magique qui résout l'erreur
+                .restOperations(restTemplate) // <-- Injection du client personnalisé
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
                 .build();
     }
 }
