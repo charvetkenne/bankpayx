@@ -119,12 +119,12 @@ management:
 logging:
   level:
     com.mansa.card: INFO
-    org.springframework.security: TRACE
+    org.springframework.security: WARN
     org.hibernate.SQL: WARN
     org.apache.kafka: OFF
     org.springframework.kafka: OFF
-    org.springframework.ecurity.oauth2: TRACE
-    org.springframework.web.client: DEBUG
+    org.springframework.ecurity.oauth2: WARN
+    org.springframework.web.client: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlationId}] %-5level %logger{36} - %msg%n"
 
