@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -62,7 +63,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html",
            "/api/webhooks/stripe",   // Vérifie que ce chemin correspond à ton controller
-            "/api/webhooks/paypal"    // Ajouté pour PayPal
+            "/api/webhooks/paypal",   // Ajouté pour PayPal
+            "/error"
     };
 
      @Bean
@@ -85,7 +87,8 @@ public class SecurityConfig {
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                    // .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                    .jwt(Customizer.withDefaults())
                     .authenticationEntryPoint(authenticationEntryPoint)
             )   
             .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class);
