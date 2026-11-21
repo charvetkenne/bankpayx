@@ -11,8 +11,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 //import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -111,4 +114,22 @@ public class SecurityConfig {
         return source;
     }
    
+
+      @Bean
+    public JwtDecoder jwtDecoder() {
+        // 1. URL exacte des clés publiques de Supabase (JWKS)
+        String jwkSetUri = "https://irjomcdsthgqmznubqti.supabase.co/auth/v1/jwks";
+        
+        // 2. Créer le décodeur
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+
+        // 3. Forcer la validation de l'issuer (l'émetteur du token)
+        String issuerUri = "https://irjomcdsthgqmznubqti.supabase.co/auth/v1";
+        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
+        
+        // 4. Appliquer le validateur
+        jwtDecoder.setJwtValidator(withIssuer);
+
+        return jwtDecoder;
+    }
 }
