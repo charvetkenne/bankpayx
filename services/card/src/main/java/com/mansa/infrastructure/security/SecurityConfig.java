@@ -134,7 +134,7 @@ public class SecurityConfig {
 
         // 3. Configurer le décodeur avec ce RestTemplate et l'algorithme ES256
         return NimbusJwtDecoder
-                .withJwkSetUri("https://irjomcdsthgqmznubqti.supabase.co/auth/v1/jwks")
+                .withJwkSetUri("https://irjomcdsthgqmznubqti.supabase.co/auth/v1/.well-known/jwks.json")
                 .restOperations(restTemplate) // <-- Injection du client personnalisé
                 .jwsAlgorithm(SignatureAlgorithm.ES256)
                 .build();
