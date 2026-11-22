@@ -102,8 +102,6 @@ paypal:
   brand-name: BankPayX
   webhook-id: ${PAYPAL_WEBHOOK_ID}
 
-supabase:
-  anon-key: ${SUPABASE_ANON_KEY}  
  
 # ── Actuator ───────────────────────────────────────────────────────────────────
 management:
