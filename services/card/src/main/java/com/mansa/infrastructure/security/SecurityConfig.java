@@ -60,8 +60,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // private final CorrelationIdFilter          correlationIdFilter;
-    // private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+     private final CorrelationIdFilter          correlationIdFilter;
+     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     // private final JwtAuthenticationConverter jwtAuthenticationConverter;
 
     private static final String[] PUBLIC_ENDPOINTS = {
