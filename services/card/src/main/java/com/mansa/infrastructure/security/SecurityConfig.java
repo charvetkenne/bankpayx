@@ -107,33 +107,52 @@ public class SecurityConfig {
     // ✅ SUPPRIMÉ : Le bean jwtDecoder() hardcodé sur localhost. 
     // Spring Boot le génère automatiquement et correctement grâce à la propriété 
     // 'spring.security.oauth2.resourceserver.jwt.issuer-uri' du application.yml
-     @Bean
-    public Converter<Jwt, Collection<GrantedAuthority>> supabaseRoleConverter() {
-        return jwt -> {
+    //  @Bean
+    // public Converter<Jwt, Collection<GrantedAuthority>> supabaseRoleConverter() {
+    //     return jwt -> {
+    //         List<GrantedAuthority> authorities = new ArrayList<>();
+            
+    //         // Lire le champ "app_metadata" du token
+    //         Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
+    //         if (appMetadata != null && appMetadata.containsKey("roles")) {
+    //             @SuppressWarnings("unchecked")
+    //             List<String> roles = (List<String>) appMetadata.get("roles");
+    //             // Ajouter le préfixe "ROLE_" et mettre en majuscule (ex: "payment_user" -> "ROLE_PAYMENT_USER")
+    //             roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
+    //         } else {
+    //             // Fallback : si pas de rôles custom, on donne un rôle USER par défaut
+    //             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+    //         }
+    //         return authorities;
+    //     };
+    // }
+
+
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        
+        // On définit le convertisseur de rôles directement ici (en local)
+        // pour éviter que Spring MVC ne tente de l'utiliser pour les URLs
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<GrantedAuthority> authorities = new ArrayList<>();
             
-            // Lire le champ "app_metadata" du token
+            // Lire le champ "app_metadata" du token Supabase
             Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
+            
             if (appMetadata != null && appMetadata.containsKey("roles")) {
                 @SuppressWarnings("unchecked")
                 List<String> roles = (List<String>) appMetadata.get("roles");
-                // Ajouter le préfixe "ROLE_" et mettre en majuscule (ex: "payment_user" -> "ROLE_PAYMENT_USER")
+                // Ajouter le préfixe "ROLE_" et mettre en majuscule
                 roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
             } else {
                 // Fallback : si pas de rôles custom, on donne un rôle USER par défaut
                 authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
             }
             return authorities;
-        };
-    }
-
-     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(supabaseRoleConverter());
+        });
         
         // Définir le nom du principal comme l'UUID de l'utilisateur (le "sub" du token)
-        // C'est ce que ton JwtUtils.getCurrentUserId() va récupérer !
         converter.setPrincipalClaimName("sub");
         
         return converter;
