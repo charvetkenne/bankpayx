@@ -14,6 +14,7 @@ public class TransactionMapper {
     public TransactionEntity toEntity(CardPayment payment) {
         return TransactionEntity.builder()
                 .transactionId(payment.getTransactionId())
+                .userId(payment.getUserId())
                 // Données carte — nullables si Stripe n'a pas encore répondu
                 .maskedCardNumber(payment.getMaskedCardNumber())
                 .cardHolder(payment.getCardHolder())
@@ -39,6 +40,7 @@ public class TransactionMapper {
 
         return CardPayment.builder()
                 .transactionId(e.getTransactionId())
+                .userId(e.getUserId())
                 .maskedCardNumber(e.getMaskedCardNumber())
                 .cardHolder(e.getCardHolder())
                 .cardType(e.getCardType())
