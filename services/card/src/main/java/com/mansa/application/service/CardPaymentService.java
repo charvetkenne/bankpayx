@@ -12,12 +12,14 @@ import com.mansa.domain.model.CardPayment;
 import com.mansa.domain.model.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 //import java.time.YearMonth;
 //import java.util.List;
-
 
 
 @Slf4j
@@ -37,8 +39,12 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
                 command.amount(), command.currency());
 
         Money money = Money.of(command.amount(), Currency.valueOf(command.currency()));
+
+        // L'userId vient du JWT Supabase (claim "sub") : c'est un UUID.
+        UUID userId = UUID.fromString(command.userId());
+
         CardPayment payment = CardPayment.initiate(
-                money, command.merchantId(), command.description(),
+                userId, money, command.merchantId(), command.description(),
                 command.correlationId(), command.paymentMethodId()
         );
 
@@ -62,8 +68,6 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
 }
 
 
-
-
 // @Slf4j
 // @Service
 // @RequiredArgsConstructor
@@ -73,10 +77,6 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
 //     private final TransactionPersistencePort persistencePort;
 //     private final EventPublisherPort         eventPublisherPort;
 
-//     // Supprimé : List<CardValidationPort> cardValidators
-//     // La validation de la carte est désormais assurée par Stripe
-//     // (le paymentMethodId est un token créé par Stripe.js après validation côté frontend)
-
 //     @Override
 //     @Transactional
 //     public CardPayment process(Command command) {
@@ -85,17 +85,11 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
 //                 command.amount(), command.currency());
 
 //         Money money = Money.of(command.amount(), Currency.valueOf(command.currency()));
-
-//         // Créer l'agrégat sans données brutes de carte
 //         CardPayment payment = CardPayment.initiate(
-//                 money,
-//                 command.merchantId(),
-//                 command.description(),
-//                 command.correlationId(),
-//                 command.paymentMethodId()
+//                 money, command.merchantId(), command.description(),
+//                 command.correlationId(), command.paymentMethodId()
 //         );
 
-//         // Persister en PENDING avant l'appel Stripe
 //         CardPayment saved = persistencePort.save(payment);
 
 //         try {
@@ -105,8 +99,7 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
 //                     command.correlationId(), saved.getTransactionId(), gatewayId);
 
 //         } catch (Exception ex) {
-//             log.error("[{}] Payment authorization failed: {}",
-//                     command.correlationId(), ex.getMessage());
+//             log.error("[{}] Payment failed: {}", command.correlationId(), ex.getMessage());
 //             saved.markFailed(ex.getMessage());
 //         }
 
@@ -115,3 +108,4 @@ public class CardPaymentService implements ProcessCardPaymentUseCase {
 //         return updated;
 //     }
 // }
+
