@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -12,6 +13,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -19,6 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 //import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -36,7 +40,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Spring Security configuration.
@@ -100,8 +107,37 @@ public class SecurityConfig {
     // ✅ SUPPRIMÉ : Le bean jwtDecoder() hardcodé sur localhost. 
     // Spring Boot le génère automatiquement et correctement grâce à la propriété 
     // 'spring.security.oauth2.resourceserver.jwt.issuer-uri' du application.yml
+     @Bean
+    public Converter<Jwt, Collection<GrantedAuthority>> supabaseRoleConverter() {
+        return jwt -> {
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            
+            // Lire le champ "app_metadata" du token
+            Map<String, Object> appMetadata = jwt.getClaim("app_metadata");
+            if (appMetadata != null && appMetadata.containsKey("roles")) {
+                @SuppressWarnings("unchecked")
+                List<String> roles = (List<String>) appMetadata.get("roles");
+                // Ajouter le préfixe "ROLE_" et mettre en majuscule (ex: "payment_user" -> "ROLE_PAYMENT_USER")
+                roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
+            } else {
+                // Fallback : si pas de rôles custom, on donne un rôle USER par défaut
+                authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+            }
+            return authorities;
+        };
+    }
 
-
+     @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(supabaseRoleConverter());
+        
+        // Définir le nom du principal comme l'UUID de l'utilisateur (le "sub" du token)
+        // C'est ce que ton JwtUtils.getCurrentUserId() va récupérer !
+        converter.setPrincipalClaimName("sub");
+        
+        return converter;
+    }
        
 
     @Bean
