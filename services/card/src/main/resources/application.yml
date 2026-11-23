@@ -120,7 +120,7 @@ management:
 logging:
   level:
     com.mansa.card: INFO
-    org.springframework.security: WARN
+    org.springframework.security: DEBUG
     org.hibernate.SQL: WARN
     org.apache.kafka: OFF
     org.springframework.kafka: OFF
