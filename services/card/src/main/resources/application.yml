@@ -101,7 +101,7 @@ paypal:
   base-url: https://api-m.sandbox.paypal.com
   brand-name: BankPayX
   webhook-id: ${PAYPAL_WEBHOOK_ID}
-
+ 
  
 # ── Actuator ───────────────────────────────────────────────────────────────────
 management:
