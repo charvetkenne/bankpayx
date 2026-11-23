@@ -86,12 +86,12 @@ public class SecurityConfig {
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     // Note: hasAnyAuthority est souvent plus fiable que hasAnyRole avec Supabase 
                     // sauf si ton JwtAuthenticationConverter ajoute le préfixe "ROLE_"
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/capture").hasAnyAuthority("MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/refund").hasAnyAuthority("MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.GET,  "/api/v1/payments/**").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/create_order").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
-                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/capture_order").hasAnyAuthority("PAYMENT_USER", "MERCHANT", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments").hasAnyAuthority("ROLE_PAYMENT_USER", "ROLE_MERCHANT", "ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/capture").hasAnyAuthority("ROLE_MERCHANT", "ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/refund").hasAnyAuthority("ROLE_MERCHANT", "ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.GET,  "/api/v1/payments/**").hasAnyAuthority("ROLE_PAYMENT_USER", "ROLE_MERCHANT", "ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/create_order").hasAnyAuthority("ROLE_PAYMENT_USER", "ROLE_MERCHANT", "ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/paypal/capture_order").hasAnyAuthority("ROLE_PAYMENT_USER", "ROLE_MERCHANT", "ROLE_ADMIN")
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
